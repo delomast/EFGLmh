@@ -25,8 +25,10 @@ combineEFGLdata <- function(genoComb = c("intersect", "union"),
 	mD <- toComb[[1]]$metadata
 	for(i in 2:length(toComb)){
 		# intersect or union of loci
-		m1 <- colnames(gD)[3:ncol(gD)]
-		m2 <- colnames(toComb[[i]]$genotypes)[3:ncol(toComb[[i]]$genotypes)]
+		m1 <- c() # in case no genotypes
+		m2 <- c()
+		if(ncol(gD) > 2) m1 <- colnames(gD)[3:ncol(gD)]
+		if(ncol(toComb[[i]]$genotypes) > 2) m2 <- colnames(toComb[[i]]$genotypes)[3:ncol(toComb[[i]]$genotypes)]
 		if(genoComb == "intersect"){
 			m_new <- m1[m1 %in% m2]
 		} else {
@@ -45,8 +47,10 @@ combineEFGLdata <- function(genoComb = c("intersect", "union"),
 		gD <- bind_rows(gD, toComb[[i]]$genotypes)
 
 		# intersect or union of metadata
-		d1 <- colnames(mD)[3:ncol(mD)]
-		d2 <- colnames(toComb[[i]]$metadata)[3:ncol(toComb[[i]]$metadata)]
+		m1 <- c() # in case no metadata
+		m2 <- c()
+		if(ncol(mD) > 2) d1 <- colnames(mD)[3:ncol(mD)]
+		if(ncol(toComb[[i]]$metadata) > 2) d2 <- colnames(toComb[[i]]$metadata)[3:ncol(toComb[[i]]$metadata)]
 		if(genoComb == "intersect"){
 			d_new <- d1[d1 %in% d2]
 		} else {
@@ -63,10 +67,48 @@ combineEFGLdata <- function(genoComb = c("intersect", "union"),
 		# combine
 		mD <- mD %>% select(Pop, Ind, d_new)
 		toComb[[i]]$metadata <- toComb[[i]]$metadata %>% select(Pop, Ind, d_new)
-		mD <- bind_rows(mD, toComb[[i]]$genotypes)
+		mD <- bind_rows(mD, toComb[[i]]$metadata)
 	}
 
 	return(construct_EFGLdata(list(genotypes = gD, metadata = mD)))
 
 }
 
+#' combine populations into one AND REMOVE the old populations
+#' @param x an EFGLdata object
+#' @param pops a vector of populations to combine
+#' @param newName a string giving the name of the population to combine pops
+#'   into. This can be a new pop or an existing pop (a warning is issued if existing).
+#' @return an EFGLdata object
+#' @export
+#'
+movePops <- function(x, pops, newName){
+	if(length(newName) != 1) stop("newName must be one string")
+	if(any(!pops %in% x$genotypes$Pop)) stop("not all pops are in this EFGLdata object")
+	if(newName %in% x$genotypes$Pop) warning(newName, " already exists. Adding pops to an existing population.")
+
+	x$genotypes$Pop[x$genotypes$Pop %in% pops] <- newName
+	x$metadata$Pop[x$metadata$Pop %in% pops] <- newName
+
+	return(construct_EFGLdata(x))
+}
+
+#' combine individuals into one population AND REMOVE the previous entry
+#'   for those individuals
+#' @param x an EFGLdata object
+#' @param inds a vector of individuals to put in the new pop
+#' @param newName a string giving the name of population to add the individuals
+#'   too. This can be a new pop or an existing pop (a warning is issued if existing).
+#' @return an EFGLdata object
+#' @export
+#'
+moveInds <- function(x, inds, newName){
+	if(length(newName) != 1) stop("newName must be one string")
+	if(any(!inds %in% x$genotypes$Ind)) stop("not all inds are in this EFGLdata object")
+	if(newName %in% x$genotypes$Pop) warning(newName, " already exists. Adding pops to an existing population.")
+
+	x$genotypes$Pop[x$genotypes$Ind %in% inds] <- newName
+	x$metadata$Pop[x$metadata$Ind %in% inds] <- newName
+
+	return(construct_EFGLdata(x))
+}

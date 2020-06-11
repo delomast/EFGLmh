@@ -19,9 +19,18 @@ combineEFGLdata(d,d,d)
 d1 <- readInData(filter(t, Pedigree == "OmyOXBO19S"))
 d2 <- readInData(filter(t, Pedigree != "OmyOXBO19S"))
 d2$metadata <- d2$metadata %>% select(Pop, Ind, Gender)
+d2$genotypes <- d2$genotypes %>% select(Pop, Ind)
 
 c <- combineEFGLdata(d1, d2, genoComb = "union", metaComb = "union")
+c <- combineEFGLdata(d1, d2, genoComb = "intersect", metaComb = "intersect")
 c[[1]]
+tail(c[[1]])
 c[[2]]
 tail(c[[2]])
 
+c <- movePops(readInData(t), c("OmyOXBO19S", "OmyLSCR19S"), "AAA")
+numInds(c)
+c[[1]]
+c[[2]]
+
+c <- moveInds(readInData(t), c("OmyOXBO19S_0001", "OmyLSCR19S_0005"), "AAA")

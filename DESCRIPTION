@@ -2,7 +2,7 @@ Package: EFGLmh
 Type: Package
 Title: Functions For Working With Microhaps for EFGL
 Version: 0.1.0
-Author: Thomas Delomas
+Authors@R: person("Thomas", "Delomas", email = "thomas.delomas@idfg.idaho.gov", role = c("aut", "cre"))
 Maintainer: Thomas Delomas <thomas.delomas@idfg.idaho.gov>
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.

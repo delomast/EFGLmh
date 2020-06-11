@@ -109,6 +109,10 @@ construct_EFGLdata <- function(x){
 	# check that individual names are unique
 	if(nrow(x$genotypes) != n_distinct(pull(x$genotypes, Ind))) stop("Individual names must be unique")
 
+	# order by pop and ind
+	x$genotypes <- x$genotypes %>% arrange(Pop, Ind)
+	x$metadata <- x$metadata %>% arrange(Pop, Ind)
+
 	# check that genotypes and metadata contain same pop and inds in order
 	if(any(x$genotypes$Pop != x$metadata$Pop)) stop("Pop does not match between genotypes and metadata")
 	if(any(x$genotypes$Ind != x$metadata$Ind)) stop("Ind does not match between genotypes and metadata")
