@@ -6,6 +6,11 @@ Author: Thomas Delomas
 Maintainer: Thomas Delomas <thomas.delomas@idfg.idaho.gov>
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
+Imports:
+    tibble,
+    dplyr,
+    readr
 License: MIT + LICENSE
 Encoding: UTF-8
 LazyData: true
+RoxygenNote: 7.1.0
