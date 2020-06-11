@@ -57,6 +57,8 @@ rm$collection <- "one"
 dups <- close_matching_samples(D = bind_rows(rm, rb), gen_start_col = 5)
 dups <- close_matching_samples(D = rb, gen_start_col = 5)
 # note: rubias throws error when only mixture samples, but not when only
-#  baseline samples
+#  baseline samples for checking for duplicates
+dups
 
 
+exportGenoPop(d, "test.txt", header = "genePop file testing testing", pops = NULL, loci = NULL)
