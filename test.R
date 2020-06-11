@@ -33,4 +33,30 @@ numInds(c)
 c[[1]]
 c[[2]]
 
-c <- moveInds(readInData(t), c("OmyOXBO19S_0001", "OmyLSCR19S_0005"), "AAA")
+c <- moveInds(readInData(t), c("OmyOXBO19S_0001", "OmyLSCR19S_0005"), "OmyOXBO19S")
+
+d1$genotypes %>% select(-Pop, -Ind) %>% tidyr::gather(locus, allele, 1:ncol(.)) %>%
+	filter(!is.na(allele)) %>%
+	mutate(locus = gsub("\\.A[12]$", "", locus)) %>% group_by(locus) %>%
+	summarise(aRich = n_distinct(allele), .groups = "drop") %>%
+	arrange(aRich) %>% as.data.frame()
+aRich(d1)
+
+a <- removeLoci(d1, lociRemove = unique(gsub("\\.A[12]$", "", colnames(d1$genotypes)[5:ncol(d1$genotypes)])))
+a[[1]]
+aRich(a)
+removeInds(d1, getInds(d1))[[1]]
+
+library(rubias)
+d_temp <- removeLoci(d1, lociSuccess(d1) %>% filter(success < .05) %>% pull(locus))
+# d_temp <- removeLoci(d_temp, getLoci(d_temp)[grepl("_mh$", getLoci(d_temp))])
+rm <- exportRubias_mixture(d_temp)
+rb <- exportRubias_baseline(d_temp, repunit = "Pop", collection = "Pop")
+rb$indiv <- paste0(rb$indiv, "_2")
+rm$collection <- "one"
+dups <- close_matching_samples(D = bind_rows(rm, rb), gen_start_col = 5)
+dups <- close_matching_samples(D = rb, gen_start_col = 5)
+# note: rubias throws error when only mixture samples, but not when only
+#  baseline samples
+
+

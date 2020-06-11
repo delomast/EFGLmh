@@ -112,3 +112,27 @@ moveInds <- function(x, inds, newName){
 
 	return(construct_EFGLdata(x))
 }
+
+#' remove loci from an EFGLdata object
+#' @param x an EFGLdata object
+#' @param lociRemove a vector of loci names to remove
+removeLoci <-function(x, lociRemove){
+	lociRemove <- c(paste0(lociRemove, ".A1"), paste0(lociRemove, ".A2"))
+	x$genotypes <- x$genotypes %>% select(-lociRemove)
+	return(x)
+}
+
+#' remove individuals from an EFGLdata object
+#' @param x an EFGLdata object
+#' @param inds a vector of individuals to remove
+#' @return an EFGLdata object
+#' @export
+#'
+removeInds <- function(x, inds){
+	if(any(!inds %in% x$genotypes$Ind)) stop("not all inds are in this EFGLdata object")
+
+	x$genotypes <- x$genotypes %>% filter(!(Ind %in% inds))
+	x$metadata <- x$metadata %>% filter(!(Ind %in% inds))
+
+	return(construct_EFGLdata(x))
+}
