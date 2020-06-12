@@ -61,4 +61,8 @@ dups <- close_matching_samples(D = rb, gen_start_col = 5)
 dups
 
 
-exportGenoPop(d, "test.txt", header = "genePop file testing testing", pops = NULL, loci = NULL)
+exportGenoPop(d, "test.txt", header = "genePop file testing testing",
+				  pops = "OmyOXBO19S", loci = NULL)
+genepop::basic_info("test.txt", outputFile = "testout.txt", verbose = interactive())
+
+

@@ -89,12 +89,14 @@ exportGenoPop <- function(x, filename, header = "genePop file", pops = NULL,
 		gp <- g %>% select(Pop) %>% mutate(Ind = paste0(Pop, ","))
 	}
 	# convert genotypes to genepop formatting
+	to_remove <- c()
 	for(i in loci){
 		a <- g %>% select(paste0(i, ".A1"), paste0(i, ".A2"))
 		alleleIndex <- a %>% tidyr::gather(locus, allele, 1:2) %>%
 			filter(!is.na(allele)) %>% pull(allele) %>% unique
 		if(length(alleleIndex) < 1){
 			warning("all missing data for locus", i, ". Skipping this locus.")
+			to_remove <- c(to_remove, i)
 			next
 		}
 		if(length(alleleIndex) > 99) stop("More than 99 alleles at locus ", i)
@@ -108,6 +110,7 @@ exportGenoPop <- function(x, filename, header = "genePop file", pops = NULL,
 		a2[is.na(a2)] <- "00"
 		gp <- gp %>% tibble::add_column(!!i := paste0(a1,a2))
 	}
+	loci <- loci[!loci %in% to_remove]
 
 	#write genepop file
 	cat(header, "\n", file = filename, append = FALSE, sep = "")

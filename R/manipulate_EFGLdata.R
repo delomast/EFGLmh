@@ -136,3 +136,18 @@ removeInds <- function(x, inds){
 
 	return(construct_EFGLdata(x))
 }
+
+#' remove pops from an EFGLdata object
+#' @param x an EFGLdata object
+#' @param pops a vector of pops to remove
+#' @return an EFGLdata object
+#' @export
+#'
+removePops <- function(x, pops){
+	if(any(!pops %in% getPops(x))) stop("not all pops are in this EFGLdata object")
+
+	x$genotypes <- x$genotypes %>% filter(!(Pop %in% pops))
+	x$metadata <- x$metadata %>% filter(!(Pop %in% pops))
+
+	return(construct_EFGLdata(x))
+}
