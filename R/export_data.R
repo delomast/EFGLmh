@@ -22,7 +22,7 @@ exportRubias_baseline <- function(x, pops = NULL, repunit = NULL,
 
 	if(is.null(loci)) loci <- getLoci(x)
 	if(is.null(pops)) pops <- getPops(x)
-	if(any(!pops %in% x$genotypes$Pop)) stop("not all pops are in this EFGLdata object")
+	if(any(!pops %in% getPops(x))) stop("not all pops are in this EFGLdata object")
 	loci <- c(paste0(loci, ".A1"), paste0(loci, ".A2"))
 	l <- colnames(x$genotypes)[3:ncol(x$genotypes)]
 	if(any(!loci %in% l)) stop("one or more loci were not found in input")
@@ -76,7 +76,7 @@ exportGenoPop <- function(x, filename, header = "genePop file", pops = NULL,
 
 	if(is.null(loci)) loci <- getLoci(x)
 	if(is.null(pops)) pops <- getPops(x)
-	if(any(!pops %in% x$genotypes$Pop)) stop("not all pops are in this EFGLdata object")
+	if(any(!pops %in% getPops(x))) stop("not all pops are in this EFGLdata object")
 	loci2 <- c(paste0(loci, ".A1"), paste0(loci, ".A2"))
 	l <- colnames(x$genotypes)[3:ncol(x$genotypes)]
 	if(any(!loci2 %in% l)) stop("one or more loci were not found in input")
@@ -123,4 +123,76 @@ exportGenoPop <- function(x, filename, header = "genePop file", pops = NULL,
 	}
 }
 
+#' export a gRandma baseline or mixture
+#' @param x an EFGLdata object
+#' @param pops a vector of pops to include in the baseline. If not specified, all pops are used.
+#' #' @param loci a vector of loci to use. If not specified,
+#'   all loci are used.
+#' @param baseline TRUE to make a baseline input, FALSE to make a mixture input.
+#' @return a tibble
+#' @export
+#'
+exportGrandma <- function(x, pops = NULL, loci = NULL, baseline = TRUE){
+	if(ncol(x$genotypes) < 3) stop("no genotypes")
+
+	if(is.null(loci)) loci <- getLoci(x)
+	if(is.null(pops)) pops <- getPops(x)
+	if(any(!pops %in% getPops(x))) stop("not all pops are in this EFGLdata object")
+	loci <- c(paste0(loci, ".A1"), paste0(loci, ".A2"))
+	l <- colnames(x$genotypes)[3:ncol(x$genotypes)]
+	if(any(!loci %in% l)) stop("one or more loci were not found in input")
+	# put in order
+	l <- l[l %in% loci]
+	rm(loci) # defensive
+	# columns in order:
+	# Pop, Ind, Loci (no Pop for mixture)
+	g <- x$genotypes %>% filter(Pop %in% pops) %>% select(Pop, Ind, l)
+	if(!baseline) g <- g %>% select(-Pop)
+
+	return(g)
+}
+
+#' convenience function to remove loci with all fails or no variation from
+#' gRandma input
+#' @param baseline a gRandma baseline input
+#' @param mixture a gRandma mixture input
+#' @return a list with two components, one is the baseline, one is the mixture
+#' @export
+cleanGrandma <- function(baseline, mixture = NULL){
+	colnames(baseline)[1] <- "Pop"
+	if (is.null(mixture)){
+		g <- baseline
+	} else {
+		# make sure loci colnames are the same
+		if(any(colnames(baseline)[3:ncol(baseline)] !=
+				 colnames(mixture)[2:ncol(mixture)])) stop("loci colnames do not match")
+		colnames(mixture)[1] <- colnames(baseline)[2]
+		g <- tibble::tibble(Pop = rep(NA, nrow(mixture))) %>%
+			bind_cols(mixture) %>% bind_rows(baseline)
+	}
+	loci <- gsub("\\.A1$", "", colnames(g)[seq(3, ncol(g) - 1, 2)])
+	to_remove <- c()
+	for(l in loci){
+		a <- g %>% select(paste0(l, ".A1"), paste0(l, ".A2")) %>%
+			tidyr::gather(locus, allele, 1:2) %>%
+			filter(!is.na(allele)) %>% pull(allele) %>% unique
+		if(length(a) < 1){
+			cat("Removing locus", l, "for all missing genotypes.\n", sep = " ")
+			to_remove <- c(to_remove, l)
+		} else if(length(a) < 2){
+			cat("Removing locus", l, "for no variation.\n", sep = " ")
+			to_remove <- c(to_remove, l)
+		}
+	}
+	to_remove <- c(paste0(to_remove, ".A1"), paste0(to_remove, ".A2"))
+	g <- g %>% select(-to_remove)
+	if(is.null(mixture)){
+		g <- list(baseline = g %>% filter(!is.na(Pop)),
+					 mixture = NULL)
+	} else {
+		g <- list(baseline = g %>% filter(!is.na(Pop)),
+					 mixture = g %>% filter(is.na(Pop)) %>% select(-Pop))
+	}
+	return(g)
+}
 

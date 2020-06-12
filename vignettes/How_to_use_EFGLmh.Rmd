@@ -1,0 +1,41 @@
+---
+title: "How_to_use_EFGLmh"
+author: "Thomas Delomas"
+date: "6/12/2020"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{How_to_use_EFGLmh}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(EFGLmh)
+```
+
+This will walk through many (maybe all?) of the functions in the `EFGLmh` package. This package was written as a replacement for IDFGEN mainly motivated by the need to work with microhaps. It has been written to work for any diploid marker, but is written and tested with SNPs and microhaps (SNPs are really just a subcategory of microhaps).
+
+One of the main differences between IDFGEN and `EFGLmh` is that IDFGEN keeps data in a separate environment, as if the data is somewhere in the ether until using an IDFGEN function to access it. This (mostly) prevents users from accidentally modifying things, but it also causes some bugginess, makes it hard for users to purposefully modify objects, and can cause some issues when loading in data from multiple data files. `EFGLmh` instead holds data as objects of a new class, called `EFGLdata`. As such, your data will have a variable name associated with it.
+
+Now, let's walk through the functions in the package.
+
+First, install if needed, and load the package.
+```{r, eval=FALSE}
+# install the package if needed
+devtools::install_github("delomast/EFGLmh")
+
+# and load the package
+library(EFGLmh)
+```
+
+Now, let's first load in our data.
+
+
+

@@ -3,6 +3,10 @@ library(dplyr)
 options(tibble.max_extra_cols = 10)
 
 t <- readr::read_tsv("example_snp_mh.txt", guess_max = 1e4)
+# data for vignettes
+# exampleData <- t
+# usethis::use_data(exampleData)
+usethis::use_vignette("How_to_use_EFGLmh")
 which(grepl("[\\.-][Aa]1$", colnames(t)))
 colnames(t) <- make.names(colnames(t))
 
@@ -65,4 +69,5 @@ exportGenoPop(d, "test.txt", header = "genePop file testing testing",
 				  pops = "OmyOXBO19S", loci = NULL)
 genepop::basic_info("test.txt", outputFile = "testout.txt", verbose = interactive())
 
-
+exportGrandma(d, baseline = TRUE)
+exportGrandma(d, baseline = FALSE)
