@@ -56,7 +56,7 @@ readInData <- function(input, genotypeStart = NULL, pedigreeColumn = 1, nameColu
 	# convert genotype names
 	mNames <- colnames(gD)[seq(3, ncol(gD) - 1, 2)]
 	if(convertNames){
-		mNames <- gsub("\\.", "", make.names(gsub("\\.[aA]1$", "", mNames)))
+		mNames <- gsub("\\.", "", make.names(gsub("[\\.-][aA]1$", "", mNames)))
 	}
 	# standardize suffixes on allele 1 and 2
 	colnames(gD)[seq(3, ncol(gD) - 1, 2)] <- paste0(mNames, ".A1")

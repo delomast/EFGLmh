@@ -24,9 +24,18 @@ getInds <- function(x, pops = NULL){
 
 #' get a vector of loci names present
 #' @param x an EFGLdata object
+#' @export
 getLoci <- function(x){
 	if(ncol(x$genotypes) < 3) stop("no genotypes")
 	return(gsub("\\.A1$", "", colnames(x$genotypes)[seq(3,ncol(x$genotypes) - 1, 2)]))
+}
+
+#' get a vector of metadata column names present
+#' @param x an EFGLdata object
+#' @export
+getMeta <- function(x){
+	if(ncol(x$metadata) < 3) stop("no metadata")
+	return(colnames(x$metadata)[3:ncol(x$metadata)])
 }
 
 #' get the number of individuals present in each pop

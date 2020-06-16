@@ -70,7 +70,7 @@ exportRubias_mixture <- function(x, pops = NULL, collection = NULL, loci = NULL)
 #' @param return nothing, just writes a file
 #' @export
 #'
-exportGenoPop <- function(x, filename, header = "genePop file", pops = NULL,
+exportGenePop <- function(x, filename, header = "genePop file", pops = NULL,
 								  loci = NULL, useIndNames = FALSE){
 	if(ncol(x$genotypes) < 3) stop("no genotypes")
 
@@ -81,8 +81,7 @@ exportGenoPop <- function(x, filename, header = "genePop file", pops = NULL,
 	l <- colnames(x$genotypes)[3:ncol(x$genotypes)]
 	if(any(!loci2 %in% l)) stop("one or more loci were not found in input")
 
-	# select only pop and loci
-	g <- x$genotypes %>% filter(Pop %in% pops) %>% select(Pop, Ind, l)
+	g <- x$genotypes %>% filter(Pop %in% pops)
 	if(useIndNames){
 		gp <- g %>% select(Pop, Ind) %>% mutate(Ind = paste0(Ind, ","))
 	} else {
@@ -196,3 +195,73 @@ cleanGrandma <- function(baseline, mixture = NULL){
 	return(g)
 }
 
+#' write a GenAlEx input file. But you really should not be using GenAlEx.
+#' @param x an EFGLdata object
+#' @param filename the name of the file to write
+#' @param pops a vector of pops to include. If not specified,
+#'   all pops are used.
+#' @param loci a vector of loci to include. If not specified,
+#'   all loci are used.
+#' @param title a string to use as the "title" row
+#' @param return nothing, just writes a file
+#' @export
+#'
+exportGenAlEx <- function(x, filename, pops = NULL, loci = NULL, title = ""){
+	if(ncol(x$genotypes) < 3) stop("no genotypes")
+
+	if(is.null(loci)) loci <- getLoci(x)
+	if(is.null(pops)) pops <- getPops(x)
+	if(any(!pops %in% getPops(x))) stop("not all pops are in this EFGLdata object")
+	loci2 <- c(paste0(loci, ".A1"), paste0(loci, ".A2"))
+	l <- colnames(x$genotypes)[3:ncol(x$genotypes)]
+	if(any(!loci2 %in% l)) stop("one or more loci were not found in input")
+
+	# select only pop and loci
+	g <- x$genotypes %>% filter(Pop %in% pops) %>% arrange(Pop)
+	gp <- g %>% select(Ind, Pop) %>% mutate(Ind = 1:nrow(.))
+
+	# convert genotypes to numerical formatting
+	to_remove <- c()
+	for(i in loci){
+		a <- g %>% select(paste0(i, ".A1"), paste0(i, ".A2"))
+		alleleIndex <- a %>% tidyr::gather(locus, allele, 1:2) %>%
+			filter(!is.na(allele)) %>% pull(allele) %>% unique
+		if(length(alleleIndex) < 1){
+			warning("all missing data for locus", i, ". Skipping this locus.")
+			to_remove <- c(to_remove, i)
+			next
+		}
+		alleleIndex <- tibble(allele = alleleIndex,
+									 index = 1:length(alleleIndex))
+		a1 <- a %>% pull(1)
+		a2 <- a %>% pull(2)
+		a1 <- alleleIndex$index[match(a1, alleleIndex$allele)]
+		a2 <- alleleIndex$index[match(a2, alleleIndex$allele)]
+		a1[is.na(a1)] <- 0
+		a2[is.na(a2)] <- 0
+		gp <- gp %>% tibble::add_column(!!i := a1,
+												  !!paste0(i, ".A2") := a2)
+	}
+	loci <- loci[!loci %in% to_remove]
+
+	# count number of inds in each pop, in order
+	popCount <- c()
+	for(p in pops) popCount <- c(popCount, sum(gp$Pop == p))
+
+	#write GenAlEx file
+	# num loci, num samples, num pops, num samps in each pop
+	cat((ncol(gp) - 2)/2, nrow(gp), length(pops), popCount, file = filename, append = FALSE, sep = "\t")
+	cat("\n", file = filename, append = TRUE)
+	cat(title, "\t\t\t", file = filename, append = TRUE, sep = "")
+	cat(pops, file = filename, append = TRUE, sep = "\t")
+	cat("\n", file = filename, append = TRUE)
+	lNames <- colnames(gp)[3:ncol(gp)]
+	lNames[grepl("\\.A2$", lNames)] <- ""
+	cat("SampNumber", "Pop", lNames, file = filename, append = TRUE, sep = "\t")
+	cat("\n", file = filename, append = TRUE)
+	for(p in pops){
+		write.table(filter(gp, Pop == p), file = filename,
+						sep = "\t", append = TRUE, col.names = FALSE,
+						row.names = FALSE, quote = FALSE)
+	}
+}

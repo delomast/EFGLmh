@@ -6,7 +6,7 @@ t <- readr::read_tsv("example_snp_mh.txt", guess_max = 1e4)
 # data for vignettes
 # exampleData <- t
 # usethis::use_data(exampleData)
-usethis::use_vignette("How_to_use_EFGLmh")
+# usethis::use_vignette("How_to_use_EFGLmh")
 which(grepl("[\\.-][Aa]1$", colnames(t)))
 colnames(t) <- make.names(colnames(t))
 
@@ -71,3 +71,6 @@ genepop::basic_info("test.txt", outputFile = "testout.txt", verbose = interactiv
 
 exportGrandma(d, baseline = TRUE)
 exportGrandma(d, baseline = FALSE)
+
+exportGenAlEx(d, filename = "testGenAlEx.txt", title = "test title here")
+exportGenePop(d, filename = "testGenePop.txt")
