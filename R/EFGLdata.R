@@ -123,9 +123,14 @@ construct_EFGLdata <- function(x){
 
 #' print method for EFGLdata
 #' @param x an EFGLdata object
+#' @param ... ignored
 #' @export
-print.EFGLdata <- function(x){
+print.EFGLdata <- function(x, ...){
 	cat("Populations:\n")
 	print(sort(unique(x$genotypes$Pop)))
 	cat("\n", (ncol(x$genotypes)/2) - 1, "loci\n")
 }
+
+#' An example input dataset used in the vignette
+#' @format a tibble
+"exampleData"

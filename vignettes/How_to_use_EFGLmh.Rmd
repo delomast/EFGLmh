@@ -57,13 +57,13 @@ If we read it in separately, the dataframe, matrix, or tibble (below, variable `
 
 ```{r, eval=FALSE}
 # example of loading from file outside of EFGLmh
-t <- readr::read_tsv("example_snp_mh.txt", guess_max = 1e4)
+exampleData <- readr::read_tsv("example_snp_mh.txt", guess_max = 1e4)
 ```
 
 ```{r}
-print(t)
+print(exampleData)
 # example of modifying in r, here we are just selecting a few populations
-t1 <- t %>% filter(Pedigree %in% c("OmyOXBO19S", "OmyEFSW19S"))
+t1 <- exampleData %>% filter(Pedigree %in% c("OmyOXBO19S", "OmyEFSW19S"))
 # or, without dplyr:
 # t1 <- t[t$Pedigree %in% c("OmyOXBO19S", "OmyEFSW19S"),]
 
@@ -75,8 +75,8 @@ If we want to read data directly from a file, we just specify the file name as t
 ```{r, eval = FALSE}
 data_direct_from_file <- readInData("example_snp_mh.txt")
 # metadata columns withs lots of blanks can give parsing errors.
-# this can usually be solved with a larger number for the guess_max argument
-data_direct_from_file <- readInData("example_snp_mh.txt", guess_max = 1e5)
+# this can usually be solved with a larger number for the guess_max argument:
+# data_direct_from_file <- readInData("example_snp_mh.txt", guess_max = 1e5)
 ```
 
 There are many optional arguments for `readInData`:
@@ -207,7 +207,7 @@ These functions handle some common operations we perform on our datasets.
 Combining EFGLdata objects. Let's say we have two data files to read in (e.g. one mixture and one baseline, or multiple PBT baselines). We then want to combine them for filtering, analysis, export, etc.
 ```{r}
 # creating a second input datafile
-t2 <- t %>% filter(!(Pedigree %in% c("OmyOXBO19S", "OmyEFSW19S")))
+t2 <- exampleData %>% filter(!(Pedigree %in% c("OmyOXBO19S", "OmyEFSW19S")))
 
 # and now creating a second EFGLdata object
 data2 <- readInData(t2)

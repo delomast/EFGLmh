@@ -15,6 +15,9 @@ dumpTable(x, filename, row.names = FALSE, sep = "\\t")
 
 \item{sep}{passed to write.table}
 }
+\value{
+nothing, just writes a file
+}
 \description{
 wrapper for write table with commonly used options - carried over from IDFGEN
 }

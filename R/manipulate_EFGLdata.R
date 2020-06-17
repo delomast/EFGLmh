@@ -116,6 +116,7 @@ moveInds <- function(x, inds, newName){
 #' remove loci from an EFGLdata object
 #' @param x an EFGLdata object
 #' @param lociRemove a vector of loci names to remove
+#' @export
 removeLoci <-function(x, lociRemove){
 	lociRemove <- c(paste0(lociRemove, ".A1"), paste0(lociRemove, ".A2"))
 	if(any(!lociRemove %in% colnames(x$genotypes)[3:ncol(x$genotypes)])) stop("one or more loci were not found in input")

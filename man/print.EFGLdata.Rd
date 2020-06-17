@@ -4,10 +4,12 @@
 \alias{print.EFGLdata}
 \title{print method for EFGLdata}
 \usage{
-\method{print}{EFGLdata}(x)
+\method{print}{EFGLdata}(x, ...)
 }
 \arguments{
 \item{x}{an EFGLdata object}
+
+\item{...}{ignored}
 }
 \description{
 print method for EFGLdata

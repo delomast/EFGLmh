@@ -28,8 +28,9 @@ all loci are used.}
 
 \item{useIndNames}{TRUE to use individual names as sample identifiers. Otherwise,
 population names are used}
-
-\item{return}{nothing, just writes a file}
+}
+\value{
+nothing, just writes a file
 }
 \description{
 write a genepop input file

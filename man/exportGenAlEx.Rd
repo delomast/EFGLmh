@@ -18,8 +18,9 @@ all pops are used.}
 all loci are used.}
 
 \item{title}{a string to use as the "title" row}
-
-\item{return}{nothing, just writes a file}
+}
+\value{
+nothing, just writes a file
 }
 \description{
 write a GenAlEx input file

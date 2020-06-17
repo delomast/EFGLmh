@@ -67,7 +67,7 @@ exportRubias_mixture <- function(x, pops = NULL, collection = NULL, loci = NULL)
 #'   all loci are used.
 #' @param useIndNames TRUE to use individual names as sample identifiers. Otherwise,
 #'   population names are used
-#' @param return nothing, just writes a file
+#' @return nothing, just writes a file
 #' @export
 #'
 exportGenePop <- function(x, filename, header = "genePop file", pops = NULL,
@@ -203,7 +203,7 @@ cleanGrandma <- function(baseline, mixture = NULL){
 #' @param loci a vector of loci to include. If not specified,
 #'   all loci are used.
 #' @param title a string to use as the "title" row
-#' @param return nothing, just writes a file
+#' @return nothing, just writes a file
 #' @export
 #'
 exportGenAlEx <- function(x, filename, pops = NULL, loci = NULL, title = ""){
@@ -279,7 +279,7 @@ exportGenAlEx <- function(x, filename, pops = NULL, loci = NULL, title = ""){
 #' @param OFFSPRINGCOLUMN_BORN_YEAR metadata column with birth year
 #' @param OFFSRPINGCOLUMN_SAMPLE_YEAR metadata column with sample year
 #' @param OFFSPRINGCOLUMN_AGE_AT_SAMPLING metadata column with age at sampling
-#' @param return nothing, just writes a file
+#' @return nothing, just writes a file
 #' @export
 exportSNPPIT <- function(x, filename,
 								 baseline,

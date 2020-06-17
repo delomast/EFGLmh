@@ -139,6 +139,8 @@ calcHet <- function(x){
 #' @param filename filename to write out as
 #' @param row.names passed to write.table
 #' @param sep passed to write.table
+#' @importFrom utils write.table
+#' @return nothing, just writes a file
 #' @export
 #'
 dumpTable <- function(x, filename, row.names = FALSE, sep = "\t") {

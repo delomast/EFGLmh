@@ -44,8 +44,9 @@ all loci are used.}
 \item{OFFSRPINGCOLUMN_SAMPLE_YEAR}{metadata column with sample year}
 
 \item{OFFSPRINGCOLUMN_AGE_AT_SAMPLING}{metadata column with age at sampling}
-
-\item{return}{nothing, just writes a file}
+}
+\value{
+nothing, just writes a file
 }
 \description{
 write a SNPPIT input file. Will warn about skipping loci with > 2 alleles.
