@@ -1,7 +1,7 @@
 ---
 title: "How_to_use_EFGLmh"
 author: "Thomas Delomas"
-date: "6/12/2020"
+date: "6/17/2020"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{How_to_use_EFGLmh}
@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
+```{r setup, include=FALSE}
 library(EFGLmh)
 library(tidyverse)
 options(tibble.max_extra_cols = 10)
@@ -53,7 +53,7 @@ options(tibble.max_extra_cols = 10) # one of my preferred options for tidyverse
 
 Now, let's first load in our data. We can either read our data into as a dataframe, matrix, or tibble, perhaps do some modifications, and then hand it over to `EFGLmh`, or we can load it directly from a tab separated file into `EFGLmh`.
 
-If we read it in separately, the dataframe, matrix, or tibble (below, variable `rawData`) must have a column of population (pedigree) names, a column of unique individual names, optional metadata columns, and then genotype columns in a two column per call format. The pedigree and individual names can be anywhere, if their locations are specified. The genotype columns must be consecutive and on the right hand side. The start of the genotype columns can be specified, but if not, it will look for the first column with a column name ending in ".A1", ".a1", "-A1", or "-a1". Locus names are pulled from the first column for each locus.
+If we read it in separately, the dataframe, matrix, or tibble (below, variable `exampleData`) must have a column of population (pedigree) names, a column of unique individual names, optional metadata columns, and then genotype columns in a two column per call format. The pedigree and individual names can be anywhere, if their locations are specified. The genotype columns must be consecutive and on the right hand side. The start of the genotype columns can be specified, but if not, it will look for the first column with a column name ending in ".A1", ".a1", "-A1", or "-a1". Locus names are pulled from the first column for each locus.
 
 ```{r, eval=FALSE}
 # example of loading from file outside of EFGLmh
@@ -81,13 +81,13 @@ data_direct_from_file <- readInData("example_snp_mh.txt")
 
 There are many optional arguments for `readInData`:
 
-* genotypeStart: you can specify the first genotype column if you don't want it to be auto-detected.
-* pedigreeColumn: The column number that contains population (pedigree) names. Default is `1`
-* nameColumn: The column number that contains individual names. Default is `2`
-* convertNames: TRUE to convert genotype and pedigree names in the same way that IDFGEN does (remove special characters from both and remove "." from genotype names). Default is `TRUE`
-* convertMetaDataNames: TRUE to remove special characters and spaces from metadata column names. This makes accessing them easier. Default is `TRUE`
-* missingAlleles: a vector of values to treat as missing alleles. Default is `c("0", "00", "000")`
-* guess_max: when reading from a file, this is passed to `read_tsv`. Parsing errors due to colun data types can sometimes be fixed by increasing this. Default is 1e4
+* `genotypeStart`: you can specify the first genotype column if you don't want it to be auto-detected.
+* `pedigreeColumn`: The column number that contains population (pedigree) names. Default is `1`
+* `nameColumn`: The column number that contains individual names. Default is `2`
+* `convertNames`: `TRUE` to convert genotype and pedigree names in the same way that IDFGEN does (remove special characters from both and remove "." from genotype names). Default is `TRUE`
+* `convertMetaDataNames`: `TRUE` to remove special characters and spaces from metadata column names. This makes accessing them easier. Default is `TRUE`
+* `missingAlleles`: a vector of values to treat as missing alleles. Default is `c("0", "00", "000")`
+* `guess_max`: when reading from a file, this is passed to `read_tsv`. Parsing errors due to colun data types can sometimes be fixed by increasing this. Default is 1e4
 
 The `readInData` function creates object of class `EFGLdata`. When we `print` them, we just a list of the population names and the number of loci.
 ```{r}
@@ -220,7 +220,7 @@ So we have two EFGLdata objects, one with 6 populations and one with 2. Now, we 
 all_data <- combineEFGLdata(data1, data2, genoComb = "intersect", metaComb = "intersect")
 all_data
 ```
-We've now created a third EFGLdata object with all 8 populations. The arguments genoComb and metaComb tell the function how to combine loci and metadata if they are different. Options are "intersect" to only keep the loci or metadata that are in both, or "union" to keep the loci or metadata that are in either (missing loci/metadata will be given values of `NA`). Having many EFGLdata objects can use a lot of memory if you have large numbers of individuals/loci. So, if you are done with the original EFGLdata objects, you can remove them to free up some memory:
+We've now created a third EFGLdata object with all 8 populations. The arguments genoComb and metaComb tell the function how to combine loci and metadata if they are different. Options are "intersect" to only keep the loci or metadata that are in both, or "union" to keep the loci or metadata that are in either (missing loci/metadata will be given values of `NA`). Note that you can combine an unlimited number of `EFGLdata` objects in one command. For example, for four objects: `all_data <- combineEFGLdata(data1, data2, data3, data4, genoComb = "intersect", metaComb = "intersect")`. Having many EFGLdata objects can use a lot of memory if you have large numbers of individuals/loci. So, if you are done with the original EFGLdata objects, you can remove them to free up some memory:
 ```{r}
 rm(data1)
 rm(data2)
