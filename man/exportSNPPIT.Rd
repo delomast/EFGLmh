@@ -9,7 +9,7 @@ exportSNPPIT(
   filename,
   baseline,
   mixture,
-  loci,
+  loci = NULL,
   errorRate = 0.005,
   POPCOLUMN_SEX = NULL,
   POPCOLUMN_REPRO_YEARS = NULL,

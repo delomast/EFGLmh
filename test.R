@@ -75,4 +75,13 @@ exportGrandma(d, baseline = FALSE)
 exportGenAlEx(d, filename = "testGenAlEx.txt", title = "test title here")
 exportGenePop(d, filename = "testGenePop.txt")
 
-exportSNPPIT(d, filename = "testSNPPIT.txt", baseline = c("OmyDWOR19S", "OmyEFSW19S"), mixture = c("OmyLYON19S", "OmyOXBO19S"))
+genoSuccess(d, loci = getLoci(d))
+
+d_fil <- genoSuccess(d) %>% filter(success < .9) %>% pull(Ind) %>% removeInds(x = d, inds = .)
+
+numInds(d)
+numInds(d_fil)
+
+exportSNPPIT(d_fil, filename = "testSNPPIT.txt", baseline = c("OmyDWOR19S", "OmyEFSW19S"), mixture = c("OmyLYON19S", "OmyOXBO19S"))
+
+dupTable

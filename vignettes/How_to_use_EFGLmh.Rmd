@@ -18,24 +18,347 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(EFGLmh)
+library(tidyverse)
+options(tibble.max_extra_cols = 10)
 ```
 
-This will walk through many (maybe all?) of the functions in the `EFGLmh` package. This package was written as a replacement for IDFGEN mainly motivated by the need to work with microhaps. It has been written to work for any diploid marker, but is written and tested with SNPs and microhaps (SNPs are really just a subcategory of microhaps).
+# Introduction
 
-One of the main differences between IDFGEN and `EFGLmh` is that IDFGEN keeps data in a separate environment, as if the data is somewhere in the ether until using an IDFGEN function to access it. This (mostly) prevents users from accidentally modifying things, but it also causes some bugginess, makes it hard for users to purposefully modify objects, and can cause some issues when loading in data from multiple data files. `EFGLmh` instead holds data as objects of a new class, called `EFGLdata`. As such, your data will have a variable name associated with it.
+This will walk through the functions in the `EFGLmh` package. This package was written as a replacement for IDFGEN mainly motivated by the need to work with microhaps. It has been written to function for any codominant diploid marker, but is written and tested with SNPs and microhaps (SNPs are really just a subcategory of microhaps) in mind.
+
+If you want to see all the options for a function, the manual has this information in a quicker-to-find format than this vignette.
+
+One of the main differences between IDFGEN and `EFGLmh` is that IDFGEN keeps data in a separate environment, as if the data is somewhere in the ether until using an IDFGEN function to access it. This (mostly) prevents users from accidentally modifying things, but it also causes some bugginess, makes it hard for users to purposefully modify objects, and can cause some issues when loading in data from multiple data files. `EFGLmh` instead holds data as objects of a new class, called `EFGLdata`. As such, your dataset will have a variable name associated with it.
 
 Now, let's walk through the functions in the package.
 
+# Getting data into EFGLmh
+
 First, install if needed, and load the package.
 ```{r, eval=FALSE}
+# install tidyverse if you haven't already
+install.packages("tidyverse")
+
 # install the package if needed
 devtools::install_github("delomast/EFGLmh")
 
 # and load the package
 library(EFGLmh)
+# and load the tidyverse for the examples here
+library(tidyverse)
+options(tibble.max_extra_cols = 10) # one of my preferred options for tidyverse
 ```
 
-Now, let's first load in our data.
+## Loading in data
+
+Now, let's first load in our data. We can either read our data into as a dataframe, matrix, or tibble, perhaps do some modifications, and then hand it over to `EFGLmh`, or we can load it directly from a tab separated file into `EFGLmh`.
+
+If we read it in separately, the dataframe, matrix, or tibble (below, variable `rawData`) must have a column of population (pedigree) names, a column of unique individual names, optional metadata columns, and then genotype columns in a two column per call format. The pedigree and individual names can be anywhere, if their locations are specified. The genotype columns must be consecutive and on the right hand side. The start of the genotype columns can be specified, but if not, it will look for the first column with a column name ending in ".A1", ".a1", "-A1", or "-a1". Locus names are pulled from the first column for each locus.
+
+```{r, eval=FALSE}
+# example of loading from file outside of EFGLmh
+t <- readr::read_tsv("example_snp_mh.txt", guess_max = 1e4)
+```
+
+```{r}
+print(t)
+# example of modifying in r, here we are just selecting a few populations
+t1 <- t %>% filter(Pedigree %in% c("OmyOXBO19S", "OmyEFSW19S"))
+# or, without dplyr:
+# t1 <- t[t$Pedigree %in% c("OmyOXBO19S", "OmyEFSW19S"),]
+
+# and now we pass the data to EFGLmh
+data1 <- readInData(t1)
+```
+
+If we want to read data directly from a file, we just specify the file name as the first argument. The file must have the same structure as described above: a column of population (pedigree) names, a column of unique individual names, optional metadata columns, and then genotype columns in a two column per call format. The pedigree and individual names can be anywhere, if their locations are specified. The genotype columns must be consecutive and on the right hand side. The start of the genotype columns can be specified, but if not, it will look for the first column with a column name ending in ".A1", ".a1", "-A1", or "-a1". Locus names are pulled from the first column for each locus. This has been chosen to work directly with Progeny outputs.
+```{r, eval = FALSE}
+data_direct_from_file <- readInData("example_snp_mh.txt")
+# metadata columns withs lots of blanks can give parsing errors.
+# this can usually be solved with a larger number for the guess_max argument
+data_direct_from_file <- readInData("example_snp_mh.txt", guess_max = 1e5)
+```
+
+There are many optional arguments for `readInData`:
+
+* genotypeStart: you can specify the first genotype column if you don't want it to be auto-detected.
+* pedigreeColumn: The column number that contains population (pedigree) names. Default is `1`
+* nameColumn: The column number that contains individual names. Default is `2`
+* convertNames: TRUE to convert genotype and pedigree names in the same way that IDFGEN does (remove special characters from both and remove "." from genotype names). Default is `TRUE`
+* convertMetaDataNames: TRUE to remove special characters and spaces from metadata column names. This makes accessing them easier. Default is `TRUE`
+* missingAlleles: a vector of values to treat as missing alleles. Default is `c("0", "00", "000")`
+* guess_max: when reading from a file, this is passed to `read_tsv`. Parsing errors due to colun data types can sometimes be fixed by increasing this. Default is 1e4
+
+The `readInData` function creates object of class `EFGLdata`. When we `print` them, we just a list of the population names and the number of loci.
+```{r}
+data1
+```
+## Structure of EFGLdata objects
+
+The underlying structure of an `EFGLdata` object is just a list of two tibbles. The first entry is named "genotypes" and contains... metadata! No, it contains population names, individual names, and genotypes in a two column per call format (missing genotype is `NA`). The second entry is named "metadata" and contains population names, individual names, and metadata.
+```{r}
+names(data1)
+data1$genotypes
+data1$metadata
+```
+
+This (hopefully) makes it simple for you to pull out or modify data manually if there is not a specially written function in the package addressing what you want to accomplish. Simply refer to `data1$genotypes` or `data1$metadata` and treat it as you would treat any dataframe or tibble. One thing to remember if you modify things manually: the genotypes and metadata tibbles in an `EFGLdata` object should have the same individuals in the same order. You can check that you haven't messed things up by using the `construct_EFGLdata` function.
+```{r, eval=FALSE}
+# do some modification on data1
+# ...
+# and then run some error checking
+data1 <- construct_EFGLdata(data1)
+```
+
+# Summarizing data
+There are some common data summaries you may want from your data that EFGLmh has special functions to address. We'll walk through them here.
+
+## Just accessing data
+
+Get the names of all populations in an EFGLdata object
+```{r}
+pop_names <- getPops(data1)
+pop_names
+```
+
+Get the names of all individuals, or all individuals in a subset of populations
+```{r}
+# all inds in data1
+all_inds <- getInds(data1)
+# just look at first 20
+all_inds[1:20]
+
+# only inds in one pop
+subset_inds <- getInds(data1, pops = c("OmyOXBO19S"))
+# looking at first 20
+subset_inds[1:20]
+```
+
+Get the locus names
+```{r}
+loci <- getLoci(data1)
+# looking at first 20
+loci[1:20]
+```
+
+Get the metadata column names
+```{r}
+meta_names <- getMeta(data1)
+meta_names
+```
+
+Get the number of individuals in all, or a subset of populations
+```{r}
+countInds <- numInds(data1)
+countInds
+countInds_1 <- numInds(data1, pops = c("OmyOXBO19S"))
+countInds_1
+```
+
+dumpTable from IDFGEN is also included, as it is commonly used
+```{r, eval=FALSE}
+dumpTable(geno_success, "genotyping_success.txt")
+```
+
+
+## some common calculations
+
+Calculate allelic richness. I recommend doing this if you load in a dataset of just SNPs to make sure every locus has $\leq 2$ alleles, as expected.
+
+```{r}
+allele_rich <- aRich(data1)
+# this returns a tibble
+allele_rich
+# if you want to see counts of loci by allelic richness
+allele_rich %>% count(aRich)
+# same thing, without tidyverse
+table(allele_rich$aRich)
+```
+
+Genotyping success of loci, as a proportion
+```{r}
+loci_success <- lociSuccess(data1)
+loci_success
+```
+
+Genotyping success of individuals (more about removing failed individuals later)
+```{r}
+geno_success <- genoSuccess(data1)
+# this returns a tibble with both success as a proportion, and as the number of missing genotypes
+geno_success
+# or with just a subset of loci
+subsetLoci <- getLoci(data1)
+subsetLoci <- subsetLoci[!grepl("SEX", subsetLoci)]
+geno_success_noSDY <- genoSuccess(data1, loci = subsetLoci)
+geno_success_noSDY
+```
+
+Calculate observed and expected heterozygosity within each population
+```{r}
+heterozygosity <- calcHet(data1)
+heterozygosity
+```
+
+
+# manipulating EFGLdata objects
+
+These functions handle some common operations we perform on our datasets. 
+
+Combining EFGLdata objects. Let's say we have two data files to read in (e.g. one mixture and one baseline, or multiple PBT baselines). We then want to combine them for filtering, analysis, export, etc.
+```{r}
+# creating a second input datafile
+t2 <- t %>% filter(!(Pedigree %in% c("OmyOXBO19S", "OmyEFSW19S")))
+
+# and now creating a second EFGLdata object
+data2 <- readInData(t2)
+
+data2
+data1
+```
+So we have two EFGLdata objects, one with 6 populations and one with 2. Now, we combine them:
+```{r}
+all_data <- combineEFGLdata(data1, data2, genoComb = "intersect", metaComb = "intersect")
+all_data
+```
+We've now created a third EFGLdata object with all 8 populations. The arguments genoComb and metaComb tell the function how to combine loci and metadata if they are different. Options are "intersect" to only keep the loci or metadata that are in both, or "union" to keep the loci or metadata that are in either (missing loci/metadata will be given values of `NA`). Having many EFGLdata objects can use a lot of memory if you have large numbers of individuals/loci. So, if you are done with the original EFGLdata objects, you can remove them to free up some memory:
+```{r}
+rm(data1)
+rm(data2)
+```
+
+Moving all individuals in a subset of populations to a different (new or existing) population.
+```{r}
+# say we want to combine OmyDWOR19S and OmyEFSW19S, and call it "newPop"
+all_data <- movePops(all_data, pops = c("OmyDWOR19S", "OmyEFSW19S"), newName = "newPop")
+all_data
+```
+Moving a subset of individuals to a different (new or existing) population
+```{r}
+numInds(all_data)
+toMove <- c("OmyWALL19S_0696", "OmyWALL19S_0697", "OmyWALL19S_0698")
+all_data <- moveInds(all_data, inds = toMove, newName = "specialInds")
+numInds(all_data)
+```
+
+Remove loci
+```{r}
+toRemove <- c("OMS00079", "Omy_Omyclmk43896")
+all_data <- removeLoci(all_data, lociRemove = toRemove)
+all_data
+```
+Remove individuals
+```{r}
+numInds(all_data)
+toRemove <- c("OmyWALL19S_0001", "OmyWALL19S_0002")
+all_data <- removeInds(all_data, inds = toRemove)
+numInds(all_data)
+```
+Remove populations
+```{r}
+all_data
+all_data <- removePops(all_data, pops = c("OmyLSCR19S", "OmySAWT19S"))
+all_data
+```
+
+# exporting data
+
+These functions export data  in formats used by other packages and programs. They are listed here mainly so you can have a list of the export functions in one place and see an example. For a full explanation of the options within each of these functions, consult the manual.
+
+A rubias baseline
+```{r}
+gsi_baseline <- exportRubias_baseline(all_data, pops = c("OmyOXBO19S", "newPop"), 
+                                      repunit = "Pop", collection = "Pop", loci = NULL)
+```
+
+A rubias mixture
+```{r}
+gsi_mixture <- exportRubias_mixture(all_data, pops = c("OmyLYON19S", "specialInds"),
+                                    collection = "Pop", loci = NULL)
+```
+
+A gRandma baseline or mixture
+```{r}
+# baseline
+gma_baseline <- exportGrandma(all_data, pops = c("OmyOXBO19S", "newPop"), loci = NULL,
+                              baseline = TRUE)
+# mixture
+gma_mixture <- exportGrandma(all_data, pops = c("OmyLYON19S", "specialInds"), loci = NULL,
+                              baseline = FALSE)
+```
+In addition to exporting gRandma inputs, there is also a function to remove loci for gRandma inputs that either failed for all individuals, or have no variation.
+```{r}
+# this creates a list with baseline and mixture
+cleanInput <- cleanGrandma(baseline = gma_baseline, mixture = gma_mixture)
+gma_baseline <- cleanInput$baseline
+gma_mixture <- cleanInput$mixture
+```
+
+Write a GenePop file
+```{r, eval=FALSE}
+exportGenePop(all_data, "genepop.txt", useIndNames = TRUE)
+```
+
+Write a GenAlEx file
+```{r, eval=FALSE}
+exportGenAlEx(all_data, "genalexInput.txt")
+```
+
+Write a SNPPIT input file
+```{r, eval=FALSE}
+exportSNPPIT(all_data, "snppitInput.txt", baseline = c("OmyOXBO19S", "newPop"),
+             mixture = c("OmyLYON19S", "specialInds"), errorRate = .005)
+```
+
+
+# examples of common steps in data analysis
+
+## remove poorly genotyping individuals
+First, we determine genotyping success. We're using all loci, but remember `genoSuccess` can also use just a subset of loci if you input a vector of locus names.
+```{r}
+geno_success <- genoSuccess(all_data)
+geno_success
+```
+Now we get a list of individual names to remove and then use the `removeInds` function. We can filter by the proportion success or by the number of missing loci.
+```{r}
+# identify any under 90%
+failedInds <- geno_success %>% filter(success < .9) %>% pull(Ind)
+# example of code to filter by number of missing loci 
+#  (remove any with more than 37 genotypes missing)
+# failedInds <- geno_success %>% filter(numFail < 37) %>% pull(Ind)
+# and remove
+sum(numInds(all_data))
+all_data <- removeInds(all_data, inds = failedInds)
+sum(numInds(all_data))
+```
+And perhaps we want to save a list of the failed individuals and their populations
+```{r, eval=FALSE}
+removeTable <- geno_success %>% filter(Ind %in% failedInds)
+dumpTable(removeTable, "failed_inds.txt")
+# or, to efficiently do it all in the tidyverse:
+# geno_success %>% filter(Ind %in% failedInds) %>% dumpTable("failed_inds.txt")
+```
+
+## removing duplicates (with some outside help)
+
+Just as we use GSI_sim to quickly identify duplicate samples, we can use rubias.
+```{r}
+rubiasIn <- exportRubias_baseline(all_data, pops = c("OmyPAHH19S", "specialInds"), 
+                                  repunit = "Pop", collection = "Pop")
+# require 70% genotypes successful in both (but we've already filtered), and 
+# requie 95% of genotypes to be the same
+library(rubias)
+dupTable <- close_matching_samples(rubiasIn, gen_start_col = 5, min_frac_non_miss = .7, min_frac_matching = .95)
+dupTable
+```
+So we've found two pairs of dulicates, now we want to keep the ones with more genotypes. We can use the genotyping success calculated earlier to choose which one to remove. There is a special function to identify the one with lower genotyping success.
+```{r}
+toRemove <- whichLower(dupTable, geno_success)
+all_data <- removeInds(all_data, inds = toRemove)
+```
+And let's write a table of the duplicates
+```{r, eval=FALSE}
+dupTable %>% select(1:6) %>% dumpTable("duplicates.txt")
+```
 
 
 

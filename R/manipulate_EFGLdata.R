@@ -118,6 +118,7 @@ moveInds <- function(x, inds, newName){
 #' @param lociRemove a vector of loci names to remove
 removeLoci <-function(x, lociRemove){
 	lociRemove <- c(paste0(lociRemove, ".A1"), paste0(lociRemove, ".A2"))
+	if(any(!lociRemove %in% colnames(x$genotypes)[3:ncol(x$genotypes)])) stop("one or more loci were not found in input")
 	x$genotypes <- x$genotypes %>% select(-lociRemove)
 	return(x)
 }
@@ -150,4 +151,20 @@ removePops <- function(x, pops){
 	x$metadata <- x$metadata %>% filter(!(Pop %in% pops))
 
 	return(construct_EFGLdata(x))
+}
+
+#' Identify which individual out of duplicate pairs has the lower genotyping success
+#' @param dupTable the output of close_matching_samples (from rubias)
+#' @param geno_success the output of genoSuccess
+#' @return a vector of unique individual names representing the individuals with lower
+#'   genotyping success from each pair
+#' @export
+#'
+whichLower <- function(dupTable, geno_success){
+	if(nrow(dupTable) < 1) return(c())
+	dupTable <- dupTable %>%
+		mutate(s1 = geno_success$success[match(indiv_1, geno_success$Ind)],
+				s2 = geno_success$success[match(indiv_2, geno_success$Ind)],
+				remove1 = s1 < s2)
+	return(unique(c(dupTable$indiv_1[dupTable$remove1], dupTable$indiv_2[!dupTable$remove1])))
 }

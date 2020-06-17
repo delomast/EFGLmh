@@ -10,7 +10,7 @@ numInds(x, pops = NULL)
 \item{x}{an EFGLdata object}
 
 \item{pops}{a vector of pops that you want individual names for. If not
-specified, names for all pops are returned}
+specified, numbers for all pops are returned}
 }
 \value{
 a named vector with the number of individuals in each pop

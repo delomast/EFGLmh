@@ -125,7 +125,7 @@ exportGenePop <- function(x, filename, header = "genePop file", pops = NULL,
 #' export a gRandma baseline or mixture
 #' @param x an EFGLdata object
 #' @param pops a vector of pops to include in the baseline. If not specified, all pops are used.
-#' #' @param loci a vector of loci to use. If not specified,
+#' @param loci a vector of loci to use. If not specified,
 #'   all loci are used.
 #' @param baseline TRUE to make a baseline input, FALSE to make a mixture input.
 #' @return a tibble
@@ -195,7 +195,7 @@ cleanGrandma <- function(baseline, mixture = NULL){
 	return(g)
 }
 
-#' write a GenAlEx input file. But you really should not be using GenAlEx.
+#' write a GenAlEx input file
 #' @param x an EFGLdata object
 #' @param filename the name of the file to write
 #' @param pops a vector of pops to include. If not specified,

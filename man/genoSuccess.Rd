@@ -5,10 +5,13 @@
 \title{calculate genotyping success of individuals (uses only allele 1 for each
   genotype - assumes if allele 1 is (is not) NA, so is (is not) allele 2)}
 \usage{
-genoSuccess(x)
+genoSuccess(x, loci = NULL)
 }
 \arguments{
 \item{x}{an EFGLdata object}
+
+\item{loci}{a vector of loci to include. If not specified,
+all loci are used.}
 }
 \value{
 a tibble giving the genotyping success of each individual as a proportion

@@ -9,9 +9,10 @@ exportGrandma(x, pops = NULL, loci = NULL, baseline = TRUE)
 \arguments{
 \item{x}{an EFGLdata object}
 
-\item{pops}{a vector of pops to include in the baseline. If not specified, all pops are used.
-#' @param loci a vector of loci to use. If not specified,
-  all loci are used.}
+\item{pops}{a vector of pops to include in the baseline. If not specified, all pops are used.}
+
+\item{loci}{a vector of loci to use. If not specified,
+all loci are used.}
 
 \item{baseline}{TRUE to make a baseline input, FALSE to make a mixture input.}
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/export_data.R
 \name{exportGenAlEx}
 \alias{exportGenAlEx}
-\title{write a GenAlEx input file. But you really should not be using GenAlEx.}
+\title{write a GenAlEx input file}
 \usage{
 exportGenAlEx(x, filename, pops = NULL, loci = NULL, title = "")
 }
@@ -22,5 +22,5 @@ all loci are used.}
 \item{return}{nothing, just writes a file}
 }
 \description{
-write a GenAlEx input file. But you really should not be using GenAlEx.
+write a GenAlEx input file
 }

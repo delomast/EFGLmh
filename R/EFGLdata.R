@@ -88,8 +88,8 @@ readInData <- function(input, genotypeStart = NULL, pedigreeColumn = 1, nameColu
 
 
 #' some basic checks on EFGLdata objects
-#' @keywords internal
-#' @noRd
+#' @param x an EFGLdata object
+#' @export
 construct_EFGLdata <- function(x){
 
 	# check for genotypes and metadata
