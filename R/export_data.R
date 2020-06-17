@@ -216,7 +216,6 @@ exportGenAlEx <- function(x, filename, pops = NULL, loci = NULL, title = ""){
 	l <- colnames(x$genotypes)[3:ncol(x$genotypes)]
 	if(any(!loci2 %in% l)) stop("one or more loci were not found in input")
 
-	# select only pop and loci
 	g <- x$genotypes %>% filter(Pop %in% pops) %>% arrange(Pop)
 	gp <- g %>% select(Ind, Pop) %>% mutate(Ind = 1:nrow(.))
 
@@ -264,4 +263,123 @@ exportGenAlEx <- function(x, filename, pops = NULL, loci = NULL, title = ""){
 						sep = "\t", append = TRUE, col.names = FALSE,
 						row.names = FALSE, quote = FALSE)
 	}
+}
+
+#' write a SNPPIT input file. Will warn about skipping loci with > 2 alleles.
+#' @param x an EFGLdata object
+#' @param filename the name of the file to write
+#' @param baseline a vector of pops to use as the baseline (potential parents).
+#' @param mixture a vector of pops to use as the mixture (potential offspring).
+#' @param loci a vector of loci to include. If not specified,
+#'   all loci are used.
+#' @param errorRate per allele error rate for all loci
+#' @param POPCOLUMN_SEX metadata column with sex info (coded as M, F, and ?)
+#' @param POPCOLUMN_REPRO_YEARS metadata column with repro years
+#' @param POPCOLUMN_SPAWN_GROUP metadata column with spawn group
+#' @param OFFSPRINGCOLUMN_BORN_YEAR metadata column with birth year
+#' @param OFFSRPINGCOLUMN_SAMPLE_YEAR metadata column with sample year
+#' @param OFFSPRINGCOLUMN_AGE_AT_SAMPLING metadata column with age at sampling
+#' @param return nothing, just writes a file
+#' @export
+exportSNPPIT <- function(x, filename,
+								 baseline,
+                      mixture,
+                      loci = NULL,
+                      errorRate = .005,
+                      POPCOLUMN_SEX = NULL,
+                      POPCOLUMN_REPRO_YEARS = NULL,
+                      POPCOLUMN_SPAWN_GROUP = NULL,
+                      OFFSPRINGCOLUMN_BORN_YEAR = NULL,
+                      OFFSRPINGCOLUMN_SAMPLE_YEAR = NULL,
+                      OFFSPRINGCOLUMN_AGE_AT_SAMPLING = NULL){
+	if(ncol(x$genotypes) < 3) stop("no genotypes")
+
+	if(is.null(loci)) loci <- getLoci(x)
+	pops <- c(baseline, mixture)
+	if(any(!pops %in% getPops(x))) stop("not all pops are in this EFGLdata object")
+	loci2 <- c(paste0(loci, ".A1"), paste0(loci, ".A2"))
+	l <- colnames(x$genotypes)[3:ncol(x$genotypes)]
+	if(any(!loci2 %in% l)) stop("one or more loci were not found in input")
+
+	g <- x$genotypes %>% filter(Pop %in% pops) %>% arrange(Pop)
+	gp <- g %>% select(Pop, Ind)
+	# convert genotypes to numerical formatting
+	to_remove <- c()
+	for(i in loci){
+		a <- g %>% select(paste0(i, ".A1"), paste0(i, ".A2"))
+		alleleIndex <- a %>% tidyr::gather(locus, allele, 1:2) %>%
+			filter(!is.na(allele)) %>% pull(allele) %>% unique
+		if(length(alleleIndex) < 1){
+			warning("all missing data for locus", i, ". Skipping this locus.")
+			to_remove <- c(to_remove, i)
+			next
+		} else if (length(alleleIndex) > 2){
+			warning("More than two alleles found for locus", i, ". Skipping this locus.")
+			to_remove <- c(to_remove, i)
+			next
+		}
+
+		alleleIndex <- tibble(allele = alleleIndex,
+									 index = 1:length(alleleIndex))
+		a1 <- a %>% pull(1)
+		a2 <- a %>% pull(2)
+		a1 <- alleleIndex$index[match(a1, alleleIndex$allele)]
+		a2 <- alleleIndex$index[match(a2, alleleIndex$allele)]
+		a1[is.na(a1)] <- 0
+		a2[is.na(a2)] <- 0
+		gp <- gp %>% tibble::add_column(!!i := a1,
+												  !!paste0(i, ".A2") := a2)
+	}
+	loci <- loci[!loci %in% to_remove]
+
+	# write header
+	cat("NUMLOCI ", length(loci), "\n", file = filename, append = FALSE, sep = "")
+	cat("MISSING_ALLELE 0", "\n", file = filename, append = TRUE, sep = "")
+	if(!is.null(POPCOLUMN_SEX)) cat("POPCOLUMN_SEX",  "\n", file = filename, append = TRUE, sep = "")
+	if(!is.null(POPCOLUMN_REPRO_YEARS)) cat("POPCOLUMN_REPRO_YEARS", "\n", file = filename, append = TRUE, sep = "")
+	if(!is.null(POPCOLUMN_SPAWN_GROUP)) cat("POPCOLUMN_SPAWN_GROUP", "\n", file = filename, append = TRUE, sep = "")
+	if(!is.null(OFFSPRINGCOLUMN_BORN_YEAR)) cat("OFFSPRINGCOLUMN_BORN_YEAR", "\n", file = filename, append = TRUE, sep = "")
+	if(!is.null(OFFSRPINGCOLUMN_SAMPLE_YEAR)) cat("OFFSRPINGCOLUMN_SAMPLE_YEAR", "\n", file = filename, append = TRUE, sep = "")
+	if(!is.null(OFFSPRINGCOLUMN_AGE_AT_SAMPLING)) cat("OFFSPRINGCOLUMN_AGE_AT_SAMPLING", "\n", file = filename, append = TRUE, sep = "")
+
+	# write error rates
+	write.table(data.frame(l = loci, e = errorRate), file = filename, append = TRUE,
+					quote = FALSE, sep = "\t", col.names = FALSE, row.names = FALSE)
+
+	# write baseline pops
+	for(p in baseline){
+		cat("POP ", p, "\n", file = filename, append = TRUE, sep = "")
+
+		t <- gp %>% filter(Pop == p) %>% select(-Pop)
+		# add metadata if needed
+		metaCols <- c()
+		if(!is.null(POPCOLUMN_SEX)) metaCols <- c(metaCols, POPCOLUMN_SEX)
+		if(!is.null(POPCOLUMN_REPRO_YEARS)) metaCols <- c(metaCols, POPCOLUMN_REPRO_YEARS)
+		if(!is.null(POPCOLUMN_SPAWN_GROUP)) metaCols <- c(metaCols, POPCOLUMN_SPAWN_GROUP)
+		if(length(metaCols) > 0){
+			m <- x$metadata %>% filter(Pop = p) %>% select(Ind, metaCols)
+			t <- t %>% left_join(m, by = "Ind") %>% select(Ind, metaCols, everything())
+		}
+		write.table(t, file = filename, quote = FALSE, sep = "\t", row.names = FALSE, col.names = FALSE, append = TRUE)
+	}
+	warnMeta <- FALSE
+	if(length(metaCols) > 0) warnMeta <- TRUE
+
+	# write mixture pops
+	for(p in mixture){
+		cat("OFFSPRING ", p, " ?", "\n", file = filename, append = TRUE, sep = "")
+		t <- gp %>% filter(Pop == p) %>% select(-Pop)
+		# add metadata if needed
+		metaCols <- c()
+		if(!is.null(OFFSPRINGCOLUMN_BORN_YEAR)) metaCols <- c(metaCols, OFFSPRINGCOLUMN_BORN_YEAR)
+		if(!is.null(OFFSRPINGCOLUMN_SAMPLE_YEAR)) metaCols <- c(metaCols, OFFSRPINGCOLUMN_SAMPLE_YEAR)
+		if(!is.null(OFFSPRINGCOLUMN_AGE_AT_SAMPLING)) metaCols <- c(metaCols, OFFSPRINGCOLUMN_AGE_AT_SAMPLING)
+		if(length(metaCols) > 0){
+			m <- x$metadata %>% filter(Pop = p) %>% select(Ind, metaCols)
+			t <- t %>% left_join(m, by = "Ind") %>% select(Ind, metaCols, everything())
+		}
+		write.table(t, file = filename, quote = FALSE, sep = "\t", row.names = FALSE, col.names = FALSE, append = TRUE)
+	}
+	if(length(metaCols) > 0) warnMeta <- TRUE
+	if(warnMeta) warning("Options for use of metadata have not been thoroughly tested. Please report errors and use at your own risk.")
 }

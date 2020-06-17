@@ -74,3 +74,5 @@ exportGrandma(d, baseline = FALSE)
 
 exportGenAlEx(d, filename = "testGenAlEx.txt", title = "test title here")
 exportGenePop(d, filename = "testGenePop.txt")
+
+exportSNPPIT(d, filename = "testSNPPIT.txt", baseline = c("OmyDWOR19S", "OmyEFSW19S"), mixture = c("OmyLYON19S", "OmyOXBO19S"))
