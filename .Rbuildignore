@@ -3,3 +3,4 @@
 ^.*\.txt$
 ^.*\.pdf$
 ^test\.R$
+^README.md$
