@@ -183,8 +183,10 @@ cleanGrandma <- function(baseline, mixture = NULL){
 			to_remove <- c(to_remove, l)
 		}
 	}
-	to_remove <- c(paste0(to_remove, ".A1"), paste0(to_remove, ".A2"))
-	g <- g %>% select(-to_remove)
+	if(length(to_remove) > 0){
+		to_remove <- c(paste0(to_remove, ".A1"), paste0(to_remove, ".A2"))
+		g <- g %>% select(-to_remove)
+	}
 	if(is.null(mixture)){
 		g <- list(baseline = g %>% filter(!is.na(Pop)),
 					 mixture = NULL)
