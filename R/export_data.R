@@ -385,3 +385,50 @@ exportSNPPIT <- function(x, filename,
 	if(length(metaCols) > 0) warnMeta <- TRUE
 	if(warnMeta) warning("Options for use of metadata have not been thoroughly tested. Please report errors and use at your own risk.")
 }
+
+
+#' export a hierfstat input dataframe
+#' @param x an EFGLdata object
+#' @param pops a vector of pops to include. If not specified, all pops are used.
+#' @param loci a vector of loci to use. If not specified,
+#'   all loci are used.
+#' @return a dataframe coded to be used as input for hierfstat
+#' @export
+#'
+exportHierFstat <- function(x, pops = NULL, loci = NULL){
+	if(ncol(x$genotypes) < 3) stop("no genotypes")
+
+	if(is.null(loci)) loci <- getLoci(x)
+	if(is.null(pops)) pops <- getPops(x)
+	if(any(!pops %in% getPops(x))) stop("not all pops are in this EFGLdata object")
+	if(any(!(c(paste0(loci, ".A1"), paste0(loci, ".A2")) %in%
+				colnames(x$genotypes)[3:ncol(x$genotypes)]))) stop("one or more loci were not found in input")
+	# translate to one col per call
+	g <- x$genotypes %>% filter(Pop %in% pops) %>% arrange(Pop)
+	gp <- g %>% select(Pop) # columns: Pop, genotypes (one col per locus)
+
+	to_remove <- c()
+	for(i in loci){
+		a <- g %>% select(paste0(i, ".A1"), paste0(i, ".A2"))
+		alleleIndex <- a %>% tidyr::gather(locus, allele, 1:2) %>%
+			filter(!is.na(allele)) %>% pull(allele) %>% unique
+		if(length(alleleIndex) < 1){
+			warning("all missing data for locus", i, ". Skipping this locus.")
+			to_remove <- c(to_remove, i)
+			next
+		}
+		if(length(alleleIndex) > 90) stop("More than 90 alleles at locus ", i)
+		alleleIndex <- tibble(allele = alleleIndex,
+									 index = 10:(9 + length(alleleIndex))
+							)
+		a1 <- a %>% pull(1)
+		a2 <- a %>% pull(2)
+		a1 <- alleleIndex$index[match(a1, alleleIndex$allele)]
+		a2 <- alleleIndex$index[match(a2, alleleIndex$allele)]
+		aC <- paste0(a1,a2) # deal with NA's to avoid warnings from as.numeric
+		aC[aC == "NANA"] <- NA
+		gp <- gp %>% tibble::add_column(!!i := as.numeric(aC))
+	}
+
+	return(as.data.frame(gp))
+}

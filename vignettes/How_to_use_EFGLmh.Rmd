@@ -293,6 +293,12 @@ gma_baseline <- cleanInput$baseline
 gma_mixture <- cleanInput$mixture
 ```
 
+A hierfstat input dataframe
+```{r}
+hfstat_in <- exportHierFstat(data1)
+```
+
+
 Write a GenePop file
 ```{r, eval=FALSE}
 exportGenePop(all_data, "genepop.txt", useIndNames = TRUE)
