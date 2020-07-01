@@ -295,7 +295,7 @@ gma_mixture <- cleanInput$mixture
 
 A hierfstat input dataframe
 ```{r}
-hfstat_in <- exportHierFstat(data1)
+hfstat_in <- exportHierFstat(all_data)
 ```
 
 
