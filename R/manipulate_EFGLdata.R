@@ -10,8 +10,8 @@
 #' @param ... multiple EFGLdata objects separated by commas
 #' @export
 #'
-combineEFGLdata <- function(genoComb = c("intersect", "union"),
-									 metaComb = c("intersect", "union"), ...){
+combineEFGLdata <- function(..., genoComb = c("intersect", "union"),
+									 metaComb = c("intersect", "union")){
 	genoComb <- match.arg(genoComb)
 	metaComb <- match.arg(metaComb)
 	toComb <- list(...)

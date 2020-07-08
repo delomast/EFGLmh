@@ -5,12 +5,14 @@
 \title{combine multiple EFGL objects into one}
 \usage{
 combineEFGLdata(
+  ...,
   genoComb = c("intersect", "union"),
-  metaComb = c("intersect", "union"),
-  ...
+  metaComb = c("intersect", "union")
 )
 }
 \arguments{
+\item{...}{multiple EFGLdata objects separated by commas}
+
 \item{genoComb}{if the objects have different loci, whether to create
 a new object with the intersection or union of loci. If union, genotypes
 for missing loci are all NA.}
@@ -18,8 +20,6 @@ for missing loci are all NA.}
 \item{metaComb}{if the objects have different metadata fields, whether to create
 a new object with the intersection or union of the fields. If union, missing
 fields are all NA.}
-
-\item{...}{multiple EFGLdata objects separated by commas}
 }
 \description{
 combine multiple EFGL objects into one
