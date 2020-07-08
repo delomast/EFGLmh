@@ -31,43 +31,29 @@ combineEFGLdata <- function(..., genoComb = c("intersect", "union"),
 		if(ncol(toComb[[i]]$genotypes) > 2) m2 <- colnames(toComb[[i]]$genotypes)[3:ncol(toComb[[i]]$genotypes)]
 		if(genoComb == "intersect"){
 			m_new <- m1[m1 %in% m2]
-		} else {
-			m_new <- c(m1, m2[!(m2 %in% m1)])
-			# add new columns if needed
-			# first to existing
-			toAdd <- m_new[!(m_new %in% m1)]
-			for(j in toAdd) gD <- gD %>% tibble::add_column(!!j := NA)
-			# then to new
-			toAdd <- m_new[!(m_new %in% m2)]
-			for(j in toAdd) toComb[[i]]$genotypes <- toComb[[i]]$genotypes %>% tibble::add_column(!!j := NA)
+			gD <- gD %>% select(Pop, Ind, m_new)
+			toComb[[i]]$genotypes <- toComb[[i]]$genotypes %>% select(Pop, Ind, m_new)
 		}
 		# combine
-		gD <- gD %>% select(Pop, Ind, m_new)
-		toComb[[i]]$genotypes <- toComb[[i]]$genotypes %>% select(Pop, Ind, m_new)
-		gD <- bind_rows(gD, toComb[[i]]$genotypes)
+		gD <- bind_rows(gD, toComb[[i]]$genotypes) %>% select(Pop, Ind, sort(colnames(.))) # make sure order is valid
 
 		# intersect or union of metadata
-		m1 <- c() # in case no metadata
-		m2 <- c()
+		d1 <- c() # in case no metadata
+		d2 <- c()
 		if(ncol(mD) > 2) d1 <- colnames(mD)[3:ncol(mD)]
 		if(ncol(toComb[[i]]$metadata) > 2) d2 <- colnames(toComb[[i]]$metadata)[3:ncol(toComb[[i]]$metadata)]
-		if(genoComb == "intersect"){
-			d_new <- d1[d1 %in% d2]
-		} else {
-			d_new <- c(d1, d2[!(d2 %in% d1)])
-			# add new columns if needed
-			# first to existing
-			toAdd <- d_new[!(d_new %in% d1)]
-			for(j in toAdd) mD <- mD %>% tibble::add_column(!!j := NA)
-			# then to new
-			toAdd <- d_new[!(d_new %in% d2)]
-			for(j in toAdd) toComb[[i]]$metadata <- toComb[[i]]$metadata %>% tibble::add_column(!!j := NA)
-
+		d_new <- d1[d1 %in% d2]
+		if(metaComb == "intersect"){
+			mD <- mD %>% select(Pop, Ind, d_new)
+			toComb[[i]]$metadata <- toComb[[i]]$metadata %>% select(Pop, Ind, d_new)
+		}
+		# make sure variable types are the same
+		for(c in d_new){
+			if(class(pull(mD, c)) == class(pull(toComb[[i]]$metadata, c))) next
+			if(any(!is.na(pull(mD, c))) && any(!is.na(pull(toComb[[i]]$metadata, c)))) stop("metadata variable type mismatch in ", c)
 		}
 		# combine
-		mD <- mD %>% select(Pop, Ind, d_new)
-		toComb[[i]]$metadata <- toComb[[i]]$metadata %>% select(Pop, Ind, d_new)
-		mD <- bind_rows(mD, toComb[[i]]$metadata)
+		mD <- bind_rows(mD, toComb[[i]]$metadata) %>% select(Pop, Ind, everything()) # make sure order is valid
 	}
 
 	return(construct_EFGLdata(list(genotypes = gD, metadata = mD)))

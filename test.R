@@ -25,6 +25,8 @@ d2 <- readInData(filter(t, Pedigree != "OmyOXBO19S"))
 d2$metadata <- d2$metadata %>% select(Pop, Ind, Gender)
 d2$genotypes <- d2$genotypes %>% select(Pop, Ind)
 
+combineEFGLdata(d1,d2, metaComb = "union")$metadata
+
 c <- combineEFGLdata(d1, d2, genoComb = "union", metaComb = "union")
 c <- combineEFGLdata(d1, d2, genoComb = "intersect", metaComb = "intersect")
 c[[1]]

@@ -48,7 +48,8 @@ readInData <- function(input, genotypeStart = NULL, pedigreeColumn = 1, nameColu
 	}
 
 	# split into genotypes and metadata
-	gD <- input %>% select(pedigreeColumn, nameColumn, genotypeStart:ncol(.))
+	gD <- input %>% select(pedigreeColumn, nameColumn, genotypeStart:ncol(.)) %>%
+		mutate_if(function(x)!is.character(x), as.character) # make all genotypes character vectors for consistency
 	mD <- input %>% select(-(genotypeStart:ncol(.))) %>%
 		select(pedigreeColumn, nameColumn, everything())
 	rm(input)
@@ -68,6 +69,10 @@ readInData <- function(input, genotypeStart = NULL, pedigreeColumn = 1, nameColu
 	# standardize pedigree/population and individual name column names
 	colnames(gD)[1:2] <- c("Pop", "Ind")
 	colnames(mD)[1:2] <- c("Pop", "Ind")
+	gD$Pop <- as.character(gD$Pop)
+	gD$Ind <- as.character(gD$Ind)
+	mD$Pop <- as.character(mD$Pop)
+	mD$Ind <- as.character(mD$Ind)
 
 	# convert pedigree names
 	if(convertNames) {
