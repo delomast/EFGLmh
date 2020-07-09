@@ -432,3 +432,58 @@ exportHierFstat <- function(x, pops = NULL, loci = NULL){
 
 	return(as.data.frame(gp))
 }
+
+#' export a "Progeny-style" export file for later reading into EFGLmh
+#'
+#' Columns in order are Pop, Ind, metadata, genotypes (2-column per call)
+#' Missing genotypes are "0" for SNPs (biallelic or nonvariable with alleles represented by 1 character)
+#' and "000" for others. If a locus is all missing, it is treated as a SNP.
+#'
+#' @param x an EFGLdata object
+#' @param filename the name of the file to write
+#' @param pops a vector of pops to include. If not specified, all pops are used.
+#' @param loci a vector of loci to use. If not specified,
+#'   all loci are used.
+#' @param metadata a vector of metadata fields to include. If not specified,
+#'   all fields are used.
+#' @return nothing, just writes a file
+#' @export
+#'
+exportProgenyStyle <- function(x, filename, pops = NULL, loci = NULL, metadata = NULL){
+	x <- construct_EFGLdata(x) # basic checks on structure and order
+	if(ncol(x$genotypes) < 3) stop("no genotypes")
+	if(is.null(loci)) loci <- getLoci(x)
+	if(is.null(pops)) pops <- getPops(x)
+	if(is.null(metadata)){
+		metadata <- colnames(x$metadata)
+		metadata <- metadata[!(metadata %in% c("Pop", "Ind"))]
+	}
+	if(any(!pops %in% getPops(x))) stop("not all pops are in this EFGLdata object")
+	if(any(!(c(paste0(loci, ".A1"), paste0(loci, ".A2")) %in%
+				colnames(x$genotypes)[3:ncol(x$genotypes)]))) stop("one or more loci were not found in input")
+
+	# filter loci
+	# remove not included
+	toRem <- colnames(x$genotypes)[3:ncol(x$genotypes)]
+	toRem <- toRem[!(toRem %in% c(paste0(loci, ".A1"), paste0(loci, ".A2")))]
+	x$genotypes <- x$genotypes %>% select(-toRem)
+	# change missing genotype symbols
+	snpNames <- c()
+	otherNames <-c()
+	for(l in loci){
+		lnames <- c(paste0(l, ".A1"), paste0(l, ".A2"))
+		if(isSNP(pull(x$genotypes, lnames[1]), pull(x$genotypes, lnames[2]))){
+			snpNames <- c(snpNames, lnames)
+		} else {
+			otherNames <- c(otherNames, lnames)
+		}
+	}
+	if(length(snpNames) > 0) x$genotypes <- x$genotypes %>% mutate_at(snpNames, tidyr::replace_na, replace = "0")
+	if(length(otherNames) > 0) x$genotypes <- x$genotypes %>% mutate_at(otherNames, tidyr::replace_na, replace = "000")
+
+	# combine, select metadata columns, order columns, and write out
+	gNames <- colnames(x$genotypes)[3:ncol(x$genotypes)]
+	x$metadata %>% left_join(x$genotypes, by = c("Pop", "Ind")) %>%
+			 	select(Pop, Ind, metadata, gNames) %>% dumpTable(filename = filename)
+
+}

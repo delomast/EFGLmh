@@ -27,6 +27,8 @@ d2$genotypes <- d2$genotypes %>% select(Pop, Ind)
 
 combineEFGLdata(d1,d2, metaComb = "union")$metadata
 
+exportProgenyStyle(d1, filename = "testProg.txt")
+
 c <- combineEFGLdata(d1, d2, genoComb = "union", metaComb = "union")
 c <- combineEFGLdata(d1, d2, genoComb = "intersect", metaComb = "intersect")
 c[[1]]
