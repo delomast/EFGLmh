@@ -33,9 +33,11 @@ combineEFGLdata <- function(..., genoComb = c("intersect", "union"),
 			m_new <- m1[m1 %in% m2]
 			gD <- gD %>% select(Pop, Ind, m_new)
 			toComb[[i]]$genotypes <- toComb[[i]]$genotypes %>% select(Pop, Ind, m_new)
+		} else {
+			m_new <- c(m1, m2[!(m2 %in% m1)]) # to make sure order is valid
 		}
 		# combine
-		gD <- bind_rows(gD, toComb[[i]]$genotypes) %>% select(Pop, Ind, sort(colnames(.))) # make sure order is valid
+		gD <- bind_rows(gD, toComb[[i]]$genotypes) %>% select(Pop, Ind, m_new) # make sure order is valid
 
 		# intersect or union of metadata
 		d1 <- c() # in case no metadata
