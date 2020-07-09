@@ -3,6 +3,10 @@ library(dplyr)
 options(tibble.max_extra_cols = 10)
 
 t <- readr::read_tsv("example_snp_mh.txt", guess_max = 1e4)
+
+suppressMessages(
+readr::read_tsv("example_snp_mh.txt", n_max = 0)
+)
 # data for vignettes
 # exampleData <- t
 # usethis::use_data(exampleData)
@@ -12,7 +16,7 @@ colnames(t) <- make.names(colnames(t))
 
 t %>% select(2,1,-(3:10), everything())
 t %>% select((1:3))
-
+d <- readInData("example_snp_mh.txt")
 d <- readInData(t)
 str(d)
 d[[1]]
@@ -28,6 +32,8 @@ d2$genotypes <- d2$genotypes %>% select(Pop, Ind)
 combineEFGLdata(d1,d2, metaComb = "union")$metadata
 
 exportProgenyStyle(d1, filename = "testProg.txt")
+d1.1 <- readInData("testProg.txt")
+identical(d1.1, d1)
 
 c <- combineEFGLdata(d1, d2, genoComb = "union", metaComb = "union")
 c <- combineEFGLdata(d1, d2, genoComb = "intersect", metaComb = "intersect")

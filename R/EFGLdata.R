@@ -34,22 +34,33 @@ readInData <- function(input, genotypeStart = NULL, pedigreeColumn = 1, nameColu
 							  convertNames = TRUE, convertMetaDataNames = TRUE,
 							  missingAlleles = c("0", "00", "000"), guess_max = 1e4){
 
-	if(is.character(input)) input <- readr::read_tsv(input, guess_max = guess_max)
-	if(!tibble::is_tibble(input)){
+	if(!tibble::is_tibble(input) && !is.character(input)){
 		warning("converting input to a tibble")
 		input <- tibble::as_tibble(input)
 	}
 
+	if(is.character(input)){
+		cn <- colnames(suppressMessages(readr::read_tsv("example_snp_mh.txt", n_max = 0)))
+		nc <- length(cn)
+	} else {
+		cn <- colnames(input)
+		nc <- ncol(input)
+	}
+
 	# find first genotype column
-	if(is.null(genotypeStart)) {
-		genotypeStart <- which(grepl("[\\.-][Aa]1$", colnames(input)))
+	if(is.null(genotypeStart)){
+		genotypeStart <- which(grepl("[\\.-][Aa]1$", cn))
 		if(length(genotypeStart) < 1) stop("no genotype columns found")
 		genotypeStart <- genotypeStart[1]
 	}
 
+	# guess metadata values, but read all genotypes as characters
+	if(is.character(input)) input <- readr::read_tsv(input, guess_max = guess_max,
+		col_types = paste0(c(rep("?", genotypeStart - 1), rep("c", nc - genotypeStart + 1)), collapse = ""))
+
 	# split into genotypes and metadata
 	gD <- input %>% select(pedigreeColumn, nameColumn, genotypeStart:ncol(.)) %>%
-		mutate_if(function(x)!is.character(x), as.character) # make all genotypes character vectors for consistency
+		mutate_if(function(x)!is.character(x), as.character) # make all genotypes character vectors
 	mD <- input %>% select(-(genotypeStart:ncol(.))) %>%
 		select(pedigreeColumn, nameColumn, everything())
 	rm(input)
