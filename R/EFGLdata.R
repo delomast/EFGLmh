@@ -40,7 +40,7 @@ readInData <- function(input, genotypeStart = NULL, pedigreeColumn = 1, nameColu
 	}
 
 	if(is.character(input)){
-		cn <- colnames(suppressMessages(readr::read_tsv("example_snp_mh.txt", n_max = 0)))
+		cn <- colnames(suppressMessages(readr::read_tsv(input, n_max = 0)))
 		nc <- length(cn)
 	} else {
 		cn <- colnames(input)
