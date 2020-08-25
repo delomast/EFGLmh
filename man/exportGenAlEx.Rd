@@ -4,7 +4,14 @@
 \alias{exportGenAlEx}
 \title{write a GenAlEx input file}
 \usage{
-exportGenAlEx(x, filename, pops = NULL, loci = NULL, title = "")
+exportGenAlEx(
+  x,
+  filename,
+  pops = NULL,
+  loci = NULL,
+  title = "",
+  useNames = TRUE
+)
 }
 \arguments{
 \item{x}{an EFGLdata object}
@@ -18,6 +25,8 @@ all pops are used.}
 all loci are used.}
 
 \item{title}{a string to use as the "title" row}
+
+\item{useNames}{TRUE to use samples names, FALSE to replace with unique numerical identifiers}
 }
 \value{
 nothing, just writes a file

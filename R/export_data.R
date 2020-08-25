@@ -205,10 +205,11 @@ cleanGrandma <- function(baseline, mixture = NULL){
 #' @param loci a vector of loci to include. If not specified,
 #'   all loci are used.
 #' @param title a string to use as the "title" row
+#' @param useNames TRUE to use samples names, FALSE to replace with unique numerical identifiers
 #' @return nothing, just writes a file
 #' @export
 #'
-exportGenAlEx <- function(x, filename, pops = NULL, loci = NULL, title = ""){
+exportGenAlEx <- function(x, filename, pops = NULL, loci = NULL, title = "", useNames = TRUE){
 	if(ncol(x$genotypes) < 3) stop("no genotypes")
 
 	if(is.null(loci)) loci <- getLoci(x)
@@ -219,7 +220,8 @@ exportGenAlEx <- function(x, filename, pops = NULL, loci = NULL, title = ""){
 	if(any(!loci2 %in% l)) stop("one or more loci were not found in input")
 
 	g <- x$genotypes %>% filter(Pop %in% pops) %>% arrange(Pop)
-	gp <- g %>% select(Ind, Pop) %>% mutate(Ind = 1:nrow(.))
+	gp <- g %>% select(Ind, Pop)
+	if(!useNames) gp <- gp %>% mutate(Ind = 1:nrow(.))
 
 	# convert genotypes to numerical formatting
 	to_remove <- c()
