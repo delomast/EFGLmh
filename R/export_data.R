@@ -556,8 +556,13 @@ exportPlink <- function(x, filename, pops = NULL, loci = NULL,
 			next
 		}
 
+		# convert to 1/2 format for consistency
+		alleleIndex <- tibble(allele = alleleIndex,
+									 index = 1:length(alleleIndex))
 		a1 <- a %>% pull(1)
 		a2 <- a %>% pull(2)
+		a1 <- alleleIndex$index[match(a1, alleleIndex$allele)]
+		a2 <- alleleIndex$index[match(a2, alleleIndex$allele)]
 
 		a1[is.na(a1)] <- "0"
 		a2[is.na(a2)] <- "0"
@@ -589,14 +594,14 @@ exportPlink <- function(x, filename, pops = NULL, loci = NULL,
 	gp <- bind_cols(ped, gp)
 
 	# write out PED file
-	write.table(gp, file = filename, sep = "\t", quote = FALSE, col.names = FALSE, row.names = FALSE)
+	write.table(gp, file = filename, sep = " ", quote = FALSE, col.names = FALSE, row.names = FALSE)
 
 	# MAP file if appropriate
 	if(!is.null(map)){
 		write.table(data.frame(chrom = 1:length(loci),
 									  locus = loci,
 									  position = 0),
-						file = map, sep = "\t", quote = FALSE, col.names = FALSE, row.names = FALSE)
+						file = map, sep = " ", quote = FALSE, col.names = FALSE, row.names = FALSE)
 	}
 
 }
