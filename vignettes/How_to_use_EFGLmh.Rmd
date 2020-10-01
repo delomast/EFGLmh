@@ -1,7 +1,7 @@
 ---
 title: "How_to_use_EFGLmh"
 author: "Thomas Delomas"
-date: "6/17/2020"
+date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{How_to_use_EFGLmh}
@@ -309,11 +309,18 @@ Write a GenAlEx file
 exportGenAlEx(all_data, "genalexInput.txt")
 ```
 
-Write a SNPPIT input file
+Write a SNPPIT input file (only biallelic markers used)
 ```{r, eval=FALSE}
 exportSNPPIT(all_data, "snppitInput.txt", baseline = c("OmyOXBO19S", "newPop"),
              mixture = c("OmyLYON19S", "specialInds"), errorRate = .005)
 ```
+
+
+Write PLINK input files (only biallelic markers used)
+```{r, eval=FALSE}
+exportPlink(data1, "testPlink.ped", map = "testPlink.map")
+```
+
 
 
 # examples of common steps in data analysis

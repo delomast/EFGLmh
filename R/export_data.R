@@ -489,3 +489,114 @@ exportProgenyStyle <- function(x, filename, pops = NULL, loci = NULL, metadata =
 			 	select(Pop, Ind, metadata, gNames) %>% dumpTable(filename = filename)
 
 }
+
+#' export a Plink PED file and optionally a (not very useful except as a template) MAP file
+#'
+#' Only biallelic markers are used, exports as two column per call
+#'
+#' @param x an EFGLdata object
+#' @param filename the name of the file to write
+#' @param pops a vector of pops to include. If not specified, all pops are used.
+#' @param loci a vector of loci to use. If not specified,
+#'   all loci are used.
+#' @param FID Metadata column name to use as the family ID
+#' @param IID Metadata column name to use as the within-family ID
+#' @param pa Metadata column name to use as the within-family ID of the father.
+#'   If NULL, all are listed as unknown (0).
+#' @param ma Metadata column name to use as the within-family ID of the mother.
+#'   If NULL, all are listed as unknown (0).
+#' @param sex Metadata column to use as the sex. This should be coded as "M"
+#'   for male, "F" for female, and any other values are treated as Unknown.
+#'   If NULL, all are listed as unknown (0).
+#' @param pheno Metadata column to use as the phenotype. This should be coded
+#'   as "1" for control, "2" for case, and "-9" or "0" for Unknown. If NULL,
+#'   all are listed as unknown (0).
+#' @param map filename to write a MAP file. If NULL, no MAP file is written.
+#'   This just writes a dummy MAP file with the loci names in order and all
+#'   given different chromosome codes and positions of "0".
+#'   If you need a valid MAP file, you will need to edit this.
+#' @return nothing, just writes a file
+#' @export
+#'
+exportPlink <- function(x, filename, pops = NULL, loci = NULL,
+								FID = "Ind", IID = "Ind", pa = NULL, ma = NULL,
+								sex = NULL, pheno = NULL,
+								map = NULL){
+	x <- construct_EFGLdata(x) # basic checks on structure and order
+	if(ncol(x$genotypes) < 3) stop("no genotypes")
+	if(is.null(loci)) loci <- getLoci(x)
+	if(is.null(pops)) pops <- getPops(x)
+
+	if(any(!pops %in% getPops(x))) stop("not all pops are in this EFGLdata object")
+	if(any(!(c(paste0(loci, ".A1"), paste0(loci, ".A2")) %in%
+				colnames(x$genotypes)[3:ncol(x$genotypes)]))) stop("one or more loci were not found in input")
+
+	meta <- x$metadata %>% filter(Pop %in% pops) %>% arrange(Pop, Ind)
+	g <- x$genotypes %>% filter(Pop %in% pops) %>% arrange(Pop, Ind)
+	if(any(meta$Pop != g$Pop) || any(meta$Ind != g$Ind)) stop("Internal error in ordering") # just to make sure and ease my mind
+	gp <- g %>% select(Ind)
+
+	# filter out unusable loci
+	to_remove <- c()
+	for(i in loci){
+		a <- g %>% select(paste0(i, ".A1"), paste0(i, ".A2"))
+		alleleIndex <- a %>% tidyr::gather(locus, allele, 1:2) %>%
+			filter(!is.na(allele)) %>% pull(allele) %>% unique
+		if(length(alleleIndex) < 1){
+			warning("all missing data for locus", i, ". Skipping this locus.")
+			to_remove <- c(to_remove, i)
+			next
+		} else if (length(alleleIndex) > 2){
+			warning("More than two alleles found for locus", i, ". Skipping this locus.")
+			to_remove <- c(to_remove, i)
+			next
+		} else if (length(alleleIndex) < 2){
+			warning("Fewer than two alleles found for locus", i, ". Skipping this locus.")
+			to_remove <- c(to_remove, i)
+			next
+		}
+
+		a1 <- a %>% pull(1)
+		a2 <- a %>% pull(2)
+
+		a1[is.na(a1)] <- "0"
+		a2[is.na(a2)] <- "0"
+		gp <- gp %>% tibble::add_column(!!i := a1,
+												  !!paste0(i, ".A2") := a2)
+	}
+	rm(g)
+	loci <- loci[!loci %in% to_remove]
+
+	# build ped file
+	ped <- tibble::tibble(FID = meta[[FID]], IID = meta[[IID]])
+	if(is.null(pa)){
+		ped <- ped %>% tibble::add_column(paID = "0")
+	} else {
+		ped <- bind_cols(ped, meta[[pa]])
+	}
+	if(is.null(ma)){
+		ped <- ped %>% tibble::add_column(maID = "0")
+	} else {
+		ped <- bind_cols(ped, meta[[ma]])
+	}
+	if(is.null(sex)){
+		ped <- ped %>% tibble::add_column(sex = "0")
+	} else {
+		meta[[sex]] <- ifelse(meta[[sex]] == "M", "1", ifelse(meta[[sex]] == "F", "2", "0"))
+		ped <- bind_cols(ped, meta[[ma]])
+	}
+	gp <- gp %>% select(-Ind)
+	gp <- bind_cols(ped, gp)
+
+	# write out PED file
+	write.table(gp, file = filename, sep = "\t", quote = FALSE, col.names = FALSE, row.names = FALSE)
+
+	# MAP file if appropriate
+	if(!is.null(map)){
+		write.table(data.frame(chrom = 1:length(loci),
+									  locus = loci,
+									  position = 0),
+						file = map, sep = "\t", quote = FALSE, col.names = FALSE, row.names = FALSE)
+	}
+
+}
