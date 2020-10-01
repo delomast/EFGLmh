@@ -513,7 +513,7 @@ exportProgenyStyle <- function(x, filename, pops = NULL, loci = NULL, metadata =
 #'   all are listed as unknown (0).
 #' @param map filename to write a MAP file. If NULL, no MAP file is written.
 #'   This just writes a dummy MAP file with the loci names in order and all
-#'   given different chromosome codes and positions of "0".
+#'   given the same chromosome code and positions of "0".
 #'   If you need a valid MAP file, you will need to edit this.
 #' @return nothing, just writes a file
 #' @export
@@ -598,7 +598,7 @@ exportPlink <- function(x, filename, pops = NULL, loci = NULL,
 
 	# MAP file if appropriate
 	if(!is.null(map)){
-		write.table(data.frame(chrom = 1:length(loci),
+		write.table(data.frame(chrom = 1,
 									  locus = loci,
 									  position = 0),
 						file = map, sep = " ", quote = FALSE, col.names = FALSE, row.names = FALSE)
