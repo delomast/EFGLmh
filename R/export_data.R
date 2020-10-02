@@ -492,7 +492,8 @@ exportProgenyStyle <- function(x, filename, pops = NULL, loci = NULL, metadata =
 
 #' export a Plink PED file and optionally a (not very useful except as a template) MAP file
 #'
-#' Only biallelic markers are used, exports as two column per call
+#' Only biallelic markers are used, exports as two column per call. This format can be used
+#' as the input for "Admixture".
 #'
 #' @param x an EFGLdata object
 #' @param filename the name of the file to write
@@ -588,7 +589,12 @@ exportPlink <- function(x, filename, pops = NULL, loci = NULL,
 		ped <- ped %>% tibble::add_column(sex = "0")
 	} else {
 		meta[[sex]] <- ifelse(meta[[sex]] == "M", "1", ifelse(meta[[sex]] == "F", "2", "0"))
-		ped <- bind_cols(ped, meta[[ma]])
+		ped <- bind_cols(ped, meta[[sex]])
+	}
+	if(is.null(pheno)){
+		ped <- ped %>% tibble::add_column(pheno = "0")
+	} else {
+		ped <- bind_cols(ped, meta[[pheno]])
 	}
 	gp <- gp %>% select(-Ind)
 	gp <- bind_cols(ped, gp)

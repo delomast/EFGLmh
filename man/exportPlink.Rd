@@ -48,12 +48,13 @@ all are listed as unknown (0).}
 
 \item{map}{filename to write a MAP file. If NULL, no MAP file is written.
 This just writes a dummy MAP file with the loci names in order and all
-given different chromosome codes and positions of "0".
+given the same chromosome code and positions of "0".
 If you need a valid MAP file, you will need to edit this.}
 }
 \value{
 nothing, just writes a file
 }
 \description{
-Only biallelic markers are used, exports as two column per call
+Only biallelic markers are used, exports as two column per call. This format can be used
+as the input for "Admixture".
 }
