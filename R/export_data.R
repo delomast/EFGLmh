@@ -439,7 +439,8 @@ exportHierFstat <- function(x, pops = NULL, loci = NULL){
 #'
 #' Columns in order are Pop, Ind, metadata, genotypes (2-column per call)
 #' Missing genotypes are "0" for SNPs (biallelic or nonvariable with alleles represented by 1 character)
-#' and "000" for others. If a locus is all missing, it is treated as a SNP.
+#' and "000" for others. If a locus is all missing, it is treated as a SNP. Pop column is called
+#' "Pedigree" and Ind column is called "Individual.Name".
 #'
 #' @param x an EFGLdata object
 #' @param filename the name of the file to write
@@ -486,7 +487,8 @@ exportProgenyStyle <- function(x, filename, pops = NULL, loci = NULL, metadata =
 	# combine, select metadata columns, order columns, and write out
 	gNames <- colnames(x$genotypes)[3:ncol(x$genotypes)]
 	x$metadata %>% left_join(x$genotypes, by = c("Pop", "Ind")) %>%
-			 	select(Pop, Ind, metadata, gNames) %>% dumpTable(filename = filename)
+		select(Pop, Ind, metadata, gNames) %>%
+		rename(Pedigree = Pop, Individual.Name = Ind) %>% dumpTable(filename = filename)
 
 }
 

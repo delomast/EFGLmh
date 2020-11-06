@@ -25,5 +25,6 @@ nothing, just writes a file
 \description{
 Columns in order are Pop, Ind, metadata, genotypes (2-column per call)
 Missing genotypes are "0" for SNPs (biallelic or nonvariable with alleles represented by 1 character)
-and "000" for others. If a locus is all missing, it is treated as a SNP.
+and "000" for others. If a locus is all missing, it is treated as a SNP. Pop column is called
+"Pedigree" and Ind column is called "Individual.Name".
 }
