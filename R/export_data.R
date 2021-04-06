@@ -33,8 +33,8 @@ exportRubias_baseline <- function(x, pops = NULL, repunit = NULL,
 	# sample_type, repunit, collection, indiv, genotypes
 	g <- x$genotypes %>% filter(Pop %in% pops) %>% select(Ind, l) %>% rename(indiv = Ind)
 	x$metadata <- x$metadata %>% filter(Pop %in% pops)
-	repunit <- if(is.null(repunit)) rep(NA, nrow(g)) else x$metadata %>% pull(repunit)
-	collection <- if(is.null(collection)) rep(NA, nrow(g)) else x$metadata %>% pull(collection)
+	repunit <- if(is.null(repunit)) rep(NA, nrow(g)) else x$metadata[[repunit]]
+	collection <- if(is.null(collection)) rep(NA, nrow(g)) else x$metadata[[collection]]
 	return(tibble::tibble(sample_type = "reference", repunit = repunit,
 							  collection = collection) %>% bind_cols(g))
 
