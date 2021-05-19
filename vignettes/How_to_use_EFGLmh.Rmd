@@ -102,7 +102,7 @@ data1$genotypes
 data1$metadata
 ```
 
-This (hopefully) makes it simple for you to pull out or modify data manually if there is not a specially written function in the package addressing what you want to accomplish. Simply refer to `data1$genotypes` or `data1$metadata` and treat it as you would treat any dataframe or tibble. One thing to remember if you modify things manually: the genotypes and metadata tibbles in an `EFGLdata` object should have the same individuals in the same order. You can check that you haven't messed things up by using the `construct_EFGLdata` function.
+This (hopefully) makes it simple for you to pull out or modify data manually if there is not a specially written function in the package addressing what you want to accomplish. Simply refer to `data1$genotypes` or `data1$metadata` and treat it as you would treat any dataframe or tibble. One thing to remember if you modify things manually: the genotypes and metadata tibbles in an `EFGLdata` object should have the same individuals in the same order. You can check that you haven't messed things up by using the `construct_EFGLdata` function (performs some basic checks).
 ```{r, eval=FALSE}
 # do some modification on data1
 # ...
@@ -262,7 +262,7 @@ all_data
 
 # exporting data
 
-These functions export data  in formats used by other packages and programs. They are listed here mainly so you can have a list of the export functions in one place and see an example. For a full explanation of the options within each of these functions, consult the manual.
+These functions export data  in formats used by other packages and programs. They are listed here mainly so you can have a list of the export functions in one place and see an example. For a full explanation of the options within each of these functions, consult the manual. Most have options to subset loci and populations.
 
 A rubias baseline
 ```{r}
@@ -298,6 +298,15 @@ A hierfstat input dataframe
 hfstat_in <- exportHierFstat(all_data)
 ```
 
+A CKMRsim allele frequency tibble. Note that loci with all missing genotypes will be removed. And all pops (or all pops specified with the `pops` argument) are combined.
+```{r}
+ckmr_af <- exportCKMRsimAF(all_data)
+```
+
+A long format tibble of genotypes. Meant for input into CKMRsim. Note that pop information is not included in the export.
+```{r}
+ckmr_af <- exportCKMRsimLG(all_data, pops = c("OmyOXBO19S"))
+```
 
 Write a GenePop file
 ```{r, eval=FALSE}
@@ -309,12 +318,21 @@ Write a GenAlEx file
 exportGenAlEx(all_data, "genalexInput.txt")
 ```
 
+Write a Structure file
+```{r, eval=FALSE}
+exportStructure(all_data, "genalexInput.txt")
+```
+
+Write a "Progeny-export-style" file that can be later loaded back into EFGLmh with `readInData()`. This file will have Pop, Ind, metadata, genotypes (2 column per call).
+```{r, eval=FALSE}
+exportProgenyStyle(all_data, "genalexInput.txt")
+```
+
 Write a SNPPIT input file (only biallelic markers used)
 ```{r, eval=FALSE}
 exportSNPPIT(all_data, "snppitInput.txt", baseline = c("OmyOXBO19S", "newPop"),
              mixture = c("OmyLYON19S", "specialInds"), errorRate = .005)
 ```
-
 
 Write PLINK input files (only biallelic markers used)
 ```{r, eval=FALSE}

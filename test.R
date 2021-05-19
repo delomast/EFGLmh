@@ -95,3 +95,36 @@ numInds(d_fil)
 exportSNPPIT(d_fil, filename = "testSNPPIT.txt", baseline = c("OmyDWOR19S", "OmyEFSW19S"), mixture = c("OmyLYON19S", "OmyOXBO19S"))
 
 dupTable
+
+d <- readInData(exampleData)
+d$genotypes <- d$genotypes %>% mutate(test.A1 = NA, test.A2 = NA)
+af <- exportCKMRsimAF(d)
+
+d <- readInData(exampleData)
+af <- exportCKMRsimAF(d)
+
+af <- CKMRsim::reindex_markers(af)
+ex1_ckmr <- CKMRsim::create_ckmr(
+	D = af,
+	kappa_matrix = CKMRsim::kappas[c("PO", "FS", "HS", "U"), ],
+	ge_mod_assumed = CKMRsim::ge_model_TGIE,
+	ge_mod_true = CKMRsim::ge_model_TGIE,
+	ge_mod_assumed_pars_list = list(epsilon = 0.005),
+	ge_mod_true_pars_list = list(epsilon = 0.005)
+)
+CKMRsim::simulate_Qij(ex1_ckmr,
+				 calc_relats = c("PO", "FS", "U"),
+				 sim_relats = c("PO", "FS", "HS", "U"), reps = 10)
+lg_1 <- exportCKMRsimLG(d, pops = "OmyDWOR19S")
+lg_2 <- exportCKMRsimLG(d, pops = getPops(d)[getPops(d) != "OmyDWOR19S"])
+
+po_pairwise_logls <- CKMRsim::pairwise_kin_logl_ratios(D1 = lg_1,
+															 D2 = lg_2,
+															 CK = ex1_ckmr,
+															 numer = "PO",
+															 denom = "U",
+															 num_cores = 1)
+summary(po_pairwise_logls$logl_ratio)
+po_pairwise_logls %>% filter(logl_ratio > 5, num_loc > 300)
+
+exportStructure(d, "testStruc.txt")

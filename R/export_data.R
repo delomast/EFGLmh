@@ -269,6 +269,147 @@ exportGenAlEx <- function(x, filename, pops = NULL, loci = NULL, title = "", use
 	}
 }
 
+#' write a Structure input file.
+#'
+#' Columns are Ind, Pop (converted to integers), then genotypes. Missing alleles
+#' are coded as -9
+#'
+#' @param x an EFGLdata object
+#' @param filename the name of the file to write
+#' @param pops a vector of pops to include. If not specified,
+#'   all pops are used.
+#' @param loci a vector of loci to include. If not specified,
+#'   all loci are used.
+#' @return nothing, just writes a file
+#' @export
+exportStructure <- function(x, filename, pops = NULL, loci = NULL){
+	if(ncol(x$genotypes) < 3) stop("no genotypes")
+
+	if(is.null(loci)) loci <- getLoci(x)
+	if(is.null(pops)) pops <- getPops(x)
+	if(any(!pops %in% getPops(x))) stop("not all pops are in this EFGLdata object")
+	loci2 <- c(paste0(loci, ".A1"), paste0(loci, ".A2"))
+	l <- colnames(x$genotypes)[3:ncol(x$genotypes)]
+	if(any(!loci2 %in% l)) stop("one or more loci were not found in input")
+
+	g <- x$genotypes %>% filter(Pop %in% pops) %>% arrange(Pop) %>%
+		mutate(Pop = as.numeric(as.factor(Pop))) # turn pops into integers
+	gp <- g %>% select(Ind, Pop)
+
+	# convert genotypes to numerical formatting
+	to_remove <- c()
+	for(i in loci){
+		a <- g %>% select(paste0(i, ".A1"), paste0(i, ".A2"))
+		alleleIndex <- a %>% tidyr::gather(locus, allele, 1:2) %>%
+			filter(!is.na(allele)) %>% pull(allele) %>% unique
+		if(length(alleleIndex) < 1){
+			warning("all missing data for locus", i, ". Skipping this locus.")
+			to_remove <- c(to_remove, i)
+			next
+		}
+		alleleIndex <- tibble(allele = alleleIndex,
+									 index = 1:length(alleleIndex))
+		a1 <- a %>% pull(1)
+		a2 <- a %>% pull(2)
+		a1 <- alleleIndex$index[match(a1, alleleIndex$allele)]
+		a2 <- alleleIndex$index[match(a2, alleleIndex$allele)]
+		a1[is.na(a1)] <- -9
+		a2[is.na(a2)] <- -9
+		gp <- gp %>% tibble::add_column(!!i := a1,
+												  !!paste0(i, ".A2") := a2)
+	}
+	loci <- loci[!loci %in% to_remove]
+
+	cat(loci, file = filename, sep = "\t", append = FALSE) # row of locus names
+	cat("\n", file = filename, append = TRUE)
+	# Ind, Pop, genotypes
+	write.table(gp, file = filename, sep = "\t", append = TRUE,
+					col.names = FALSE, row.names = FALSE, quote = FALSE)
+}
+
+#' return a CKMRsim allele frequency input tibble.
+#'
+#' No chromosome and position information is used.
+#' All populations specified are combined into one allele frequency output.
+#' Any loci with only missing genotypes are omitted from the output. The output
+#' should then be run through the CKMRsim function \code{reindex_markers()}.
+#'
+#' @param x an EFGLdata object
+#' @param pops a vector of pops to include. If not specified,
+#'   all pops are used.
+#' @param loci a vector of loci to include. If not specified,
+#'   all loci are used.
+#' @return a tibble
+#' @export
+exportCKMRsimAF <- function(x, pops = NULL, loci = NULL){
+	if(ncol(x$genotypes) < 3) stop("no genotypes")
+
+	if(is.null(loci)) loci <- getLoci(x)
+	if(is.null(pops)) pops <- getPops(x)
+	if(any(!pops %in% getPops(x))) stop("not all pops are in this EFGLdata object")
+	loci2 <- c(paste0(loci, ".A1"), paste0(loci, ".A2"))
+	l <- colnames(x$genotypes)[3:ncol(x$genotypes)]
+	if(any(!loci2 %in% l)) stop("one or more loci were not found in input")
+
+	g <- x$genotypes %>% filter(Pop %in% pops) %>% select(-Pop) %>%
+		gather(Locus, Allele, 2:ncol(.)) %>%
+		mutate(Locus = gsub("\\.A[12]$", "", Locus)) %>%
+		filter(Locus %in% loci, !is.na(Allele)) %>%
+		group_by(Locus) %>% count(Allele) %>%
+		mutate(Freq = n / sum(n)) %>% ungroup() %>%
+		mutate(Chrom = "Unk", Pos = 1, LocIdx = NA, AlleIdx = NA) %>%
+		select(Chrom, Locus, Pos, Allele, LocIdx, AlleIdx, Freq)
+
+	locRemoved <- loci[!loci %in% g$Locus]
+	if(length(locRemoved) > 0) warning("Removed ", paste(locRemoved, collapse = " "), " for all missing data.")
+
+	# remove spaces from marker names if applicable
+	if(any(grepl(" ", loci))){
+		warning("Removing spaces from locus names in output.")
+		if(length(unique(gsub(" ", "", loci))) != length(unique(loci))) stop("Marker names are not unique after removal of spaces.")
+		g$Locus <- gsub(" ", "", g$Locus)
+	}
+
+	return(g)
+}
+
+#' Return a long genotype tibble for input to CKMRsim for relationship inference.
+#'
+#' @param x an EFGLdata object
+#' @param pops a vector of pops to include. If not specified,
+#'   all pops are used.
+#' @param loci a vector of loci to include. If not specified,
+#'   all loci are used.
+#' @return a tibble
+#' @export
+exportCKMRsimLG <- function(x, pops = NULL, loci = NULL){
+	if(ncol(x$genotypes) < 3) stop("no genotypes")
+
+	if(is.null(loci)) loci <- getLoci(x)
+	if(is.null(pops)) pops <- getPops(x)
+	if(any(!pops %in% getPops(x))) stop("not all pops are in this EFGLdata object")
+	loci2 <- c(paste0(loci, ".A1"), paste0(loci, ".A2"))
+	l <- colnames(x$genotypes)[3:ncol(x$genotypes)]
+	if(any(!loci2 %in% l)) stop("one or more loci were not found in input")
+
+	g <- x$genotypes %>% filter(Pop %in% pops) %>% select(-Pop) %>%
+		gather(Locus, Allele, 2:ncol(.)) %>%
+		mutate(gene_copy = ifelse(grepl("\\.A1$", Locus), 1, 2),
+				 Locus = gsub("\\.A[12]$", "", Locus)) %>%
+		filter(Locus %in% loci) %>% rename(Indiv = Ind) %>%
+	select(Indiv, Locus, gene_copy, Allele) %>% arrange(Indiv, Locus, gene_copy)
+
+	# remove spaces from marker names if applicable
+	if(any(grepl(" ", loci))){
+		warning("Removing spaces from locus names in output.")
+		if(length(unique(gsub(" ", "", loci))) != length(unique(loci))) stop("Marker names are not unique after removal of spaces.")
+		g$Locus <- gsub(" ", "", g$Locus)
+	}
+
+	return(g)
+}
+
+
 #' write a SNPPIT input file. Will warn about skipping loci with > 2 alleles.
 #' @param x an EFGLdata object
 #' @param filename the name of the file to write
