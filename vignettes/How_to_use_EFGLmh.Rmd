@@ -320,12 +320,12 @@ exportGenAlEx(all_data, "genalexInput.txt")
 
 Write a Structure file
 ```{r, eval=FALSE}
-exportStructure(all_data, "genalexInput.txt")
+exportStructure(all_data, "structureInput.txt")
 ```
 
 Write a "Progeny-export-style" file that can be later loaded back into EFGLmh with `readInData()`. This file will have Pop, Ind, metadata, genotypes (2 column per call).
 ```{r, eval=FALSE}
-exportProgenyStyle(all_data, "genalexInput.txt")
+exportProgenyStyle(all_data, "progenyStyleFile.txt")
 ```
 
 Write a SNPPIT input file (only biallelic markers used)
