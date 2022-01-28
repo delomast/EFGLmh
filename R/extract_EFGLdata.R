@@ -134,6 +134,25 @@ calcHet <- function(x){
 	return(full_join(eH, oH, by = c("Pop", "locus")))
 }
 
+#' calculate allele frequencies within populations
+#' Loci that are all missing genotypes wihtin a pop will be
+#' (silently) excluded form the output.
+#' @param x an EFGLdata object
+#' @return a tibble
+#' @export
+calcAF <- function(x){
+	if(ncol(x$genotypes) < 3) stop("No loci found")
+
+	x$genotypes %>% tidyr::gather(locus, allele, 3:ncol(.)) %>%
+		filter(!is.na(allele)) %>%
+		mutate(alleleNum = ifelse(grepl("\\.A1$", locus), "Allele1", "Allele2")) %>%
+		mutate(locus = gsub("\\.A[12]$", "", locus)) %>%
+		group_by(Pop, locus) %>%
+		count(allele) %>% mutate(freq = n / sum(n)) %>%
+		rename(count = n) %>% ungroup() %>%
+	return()
+}
+
 #' wrapper for write table with commonly used options - carried over from IDFGEN
 #' @param x object to write out
 #' @param filename filename to write out as

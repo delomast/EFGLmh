@@ -193,6 +193,12 @@ geno_success_noSDY <- genoSuccess(data1, loci = subsetLoci)
 geno_success_noSDY
 ```
 
+Calculate allele frequency. Note that only alleles present in a population are shown for that population. As such, if a locus is all missing genotypes in a population, it is omitted for that population.
+```{r}
+allele_freq <- calcAF(data1)
+```
+
+
 Calculate observed and expected heterozygosity within each population
 ```{r}
 heterozygosity <- calcHet(data1)
@@ -381,7 +387,7 @@ library(rubias)
 dupTable <- close_matching_samples(rubiasIn, gen_start_col = 5, min_frac_non_miss = .7, min_frac_matching = .95)
 dupTable
 ```
-So we've found two pairs of dulicates, now we want to keep the ones with more genotypes. We can use the genotyping success calculated earlier to choose which one to remove. There is a special function to identify the one with lower genotyping success.
+So we've found two pairs of duplicates, now we want to keep the ones with more genotypes. We can use the genotyping success calculated earlier to choose which one to remove. There is a special function to identify the one with lower genotyping success.
 ```{r}
 toRemove <- whichLower(dupTable, geno_success)
 all_data <- removeInds(all_data, inds = toRemove)
@@ -392,4 +398,14 @@ dupTable %>% select(1:6) %>% dumpTable("duplicates.txt")
 ```
 
 
+# simulating data
+
+A basic method of simulating F1 hybrids resulting from mating between two populations is available. Samples alleles based on allele frequencies in the two populations. If your data has a sex marker in it, you probably want to remove it prior to using this function.
+
+```{r}
+# remove sex marker, then simulate 125 F1 hybrids with missing genotypes
+data1_with_hyb <- data1 %>% removeLoci(lociRemove = "OmyY1_2SEXY") %>% 
+  createF1Hybrids(pop1 = "OmyEFSW19S", pop2 = "OmyOXBO19S", newName = "fakeHybridsF1", 
+                  n = 125, missingGenos = TRUE)
+```
 

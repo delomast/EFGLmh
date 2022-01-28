@@ -2,10 +2,12 @@
 
 S3method(print,EFGLdata)
 export(aRich)
+export(calcAF)
 export(calcHet)
 export(cleanGrandma)
 export(combineEFGLdata)
 export(construct_EFGLdata)
+export(createF1Hybrids)
 export(dumpTable)
 export(exportCKMRsimAF)
 export(exportCKMRsimLG)
