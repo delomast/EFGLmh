@@ -87,9 +87,9 @@ There are many optional arguments for `readInData`:
 * `convertNames`: `TRUE` to convert genotype and pedigree names in the same way that IDFGEN does (remove special characters from both and remove "." from genotype names). Default is `TRUE`
 * `convertMetaDataNames`: `TRUE` to remove special characters and spaces from metadata column names. This makes accessing them easier. Default is `TRUE`
 * `missingAlleles`: a vector of values to treat as missing alleles. Default is `c("0", "00", "000")`
-* `guess_max`: when reading from a file, this is passed to `read_tsv`. Parsing errors due to colun data types can sometimes be fixed by increasing this. Default is 1e4
+* `guess_max`: when reading from a file, this is passed to `read_tsv`. Parsing errors due to column data types can sometimes be fixed by increasing this. Default is 1e4
 
-The `readInData` function creates object of class `EFGLdata`. When we `print` them, we just a list of the population names and the number of loci.
+The `readInData` function creates object of class `EFGLdata`. When we `print` them, we just see a list of the population names and the number of loci.
 ```{r}
 data1
 ```
@@ -196,6 +196,7 @@ geno_success_noSDY
 Calculate allele frequency. Note that only alleles present in a population are shown for that population. As such, if a locus is all missing genotypes in a population, it is omitted for that population.
 ```{r}
 allele_freq <- calcAF(data1)
+allele_freq
 ```
 
 
@@ -342,7 +343,7 @@ exportSNPPIT(all_data, "snppitInput.txt", baseline = c("OmyOXBO19S", "newPop"),
 
 Write PLINK input files (only biallelic markers used)
 ```{r, eval=FALSE}
-exportPlink(data1, "testPlink.ped", map = "testPlink.map")
+exportPlink(all_data, "testPlink.ped", map = "testPlink.map")
 ```
 
 
@@ -403,9 +404,10 @@ dupTable %>% select(1:6) %>% dumpTable("duplicates.txt")
 A basic method of simulating F1 hybrids resulting from mating between two populations is available. Samples alleles based on allele frequencies in the two populations. If your data has a sex marker in it, you probably want to remove it prior to using this function.
 
 ```{r}
-# remove sex marker, then simulate 125 F1 hybrids with missing genotypes
-data1_with_hyb <- data1 %>% removeLoci(lociRemove = "OmyY1_2SEXY") %>% 
-  createF1Hybrids(pop1 = "OmyEFSW19S", pop2 = "OmyOXBO19S", newName = "fakeHybridsF1", 
+# remove sex marker, then simulate 125 F1 hybrids
+data1_with_hyb <- all_data %>% removeLoci(lociRemove = "OmyY1_2SEXY") %>% 
+  createF1Hybrids(pop1 = "OmyWALL19S", pop2 = "OmyOXBO19S", newName = "fakeHybridsF1", 
                   n = 125, missingGenos = TRUE)
+data1_with_hyb
 ```
 
