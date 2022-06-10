@@ -106,6 +106,7 @@ moveInds <- function(x, inds, newName){
 #' @param lociRemove a vector of loci names to remove
 #' @export
 removeLoci <-function(x, lociRemove){
+	if(length(lociRemove) < 1) return(x) # if pass an empty vector, don't remove anything
 	lociRemove <- c(paste0(lociRemove, ".A1"), paste0(lociRemove, ".A2"))
 	if(any(!lociRemove %in% colnames(x$genotypes)[3:ncol(x$genotypes)])) stop("one or more loci were not found in input")
 	x$genotypes <- x$genotypes %>% select(-lociRemove)
