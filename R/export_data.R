@@ -773,10 +773,10 @@ exportPlink <- function(x, filename, pops = NULL, loci = NULL,
 #' @param projName project name in colony input
 #' @param colOutFileName output file name to direct colony to use
 #' @param alleleDropoutRate allelic dropout rate to use for all loci
-#' @paramotherGenotypingErrorRate other genotyping error rate to use for all loci
+#' @param otherGenotypingErrorRate other genotyping error rate to use for all loci
 #' @return nothing, just writes a file
 #' @export
-exportColony <- function(x, filename = "Colony2.dat", pops = NULL, loci = NULL,
+exportColony <- function(x, filename = "colony2.dat", pops = NULL, loci = NULL,
 								 candMales = NULL, candFemales = NULL, candMaleProb = NULL,
 								 candFemaleProb = NULL,
 								 projName = "efglmhToColony",

@@ -6,7 +6,7 @@
 \usage{
 exportColony(
   x,
-  filename = "Colony2.dat",
+  filename = "colony2.dat",
   pops = NULL,
   loci = NULL,
   candMales = NULL,
@@ -45,6 +45,8 @@ all loci are used.}
 \item{colOutFileName}{output file name to direct colony to use}
 
 \item{alleleDropoutRate}{allelic dropout rate to use for all loci}
+
+\item{otherGenotypingErrorRate}{other genotyping error rate to use for all loci}
 }
 \value{
 nothing, just writes a file
