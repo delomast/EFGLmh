@@ -754,3 +754,168 @@ exportPlink <- function(x, filename, pops = NULL, loci = NULL,
 	}
 
 }
+
+#' write a Colony input file.
+#'
+#'
+#' @param x an EFGLdata object
+#' @param filename the name of the file to write. If NULL, the colony input is returned
+#'   as a character vector with each line a separate entry in the vector.
+#' @param pops a vector of pops to include. If not specified,
+#'   all pops are used.
+#' @param loci a vector of loci to include. If not specified,
+#'   all loci are used.
+#' @param candMales candidate male names
+#' @param candFemales candidate female names
+#' @param candMaleProb probability father is included in candidate males. if NULL, either 0 or 0.5 depending on whether candMales is NULL.
+#' @param candFemaleProb probability father is included in candidate Females. if NULL, either
+#'   0 or 0.5 depending on whether candFemales is NULL.
+#' @param projName project name in colony input
+#' @param colOutFileName output file name to direct colony to use
+#' @param alleleDropoutRate allelic dropout rate to use for all loci
+#' @paramotherGenotypingErrorRate other genotyping error rate to use for all loci
+#' @return nothing, just writes a file
+#' @export
+exportColony <- function(x, filename = "Colony2.dat", pops = NULL, loci = NULL,
+								 candMales = NULL, candFemales = NULL, candMaleProb = NULL,
+								 candFemaleProb = NULL,
+								 projName = "efglmhToColony",
+								 colOutFileName = "colonyResults",
+								 alleleDropoutRate = 0.01,
+								 otherGenotypingErrorRate = 0.01){
+	if(ncol(x$genotypes) < 3) stop("no genotypes")
+
+	if(is.null(loci)) loci <- getLoci(x)
+	if(is.null(pops)) pops <- getPops(x)
+	if(any(!pops %in% getPops(x))) stop("not all pops are in this EFGLdata object")
+	loci2 <- c(paste0(loci, ".A1"), paste0(loci, ".A2"))
+	l <- colnames(x$genotypes)[3:ncol(x$genotypes)]
+	if(any(!loci2 %in% l)) stop("one or more loci were not found in input")
+	if(!is.null(candMales) && any(!candMales %in% x$genotypes$Ind)) stop("not all candMales found")
+	if(!is.null(candFemales) && any(!candFemales %in% x$genotypes$Ind)) stop("not all candFemales found")
+	if(is.null(candMaleProb)){
+		if(is.null(candMales)){
+			candMaleProb <- 0
+		} else {
+			candMaleProb <- 0.5
+		}
+	}
+	if(is.null(candFemaleProb)){
+		if(is.null(candFemales)){
+			candFemaleProb <- 0
+		} else {
+			candFemaleProb <- 0.5
+		}
+	}
+
+
+	g <- x$genotypes %>% filter(Pop %in% pops) %>% ungroup() # shouldn't be grouped, just making sure here
+	gp <- g %>% select(Ind)
+
+	# convert genotypes to numerical formatting
+	to_remove <- c()
+	alleleFreq <- list()
+	for(i in loci){
+		a <- g %>% select(paste0(i, ".A1"), paste0(i, ".A2"))
+		alleleIndex <- a %>% tidyr::gather(locus, allele, 1:2) %>%
+			filter(!is.na(allele)) %>% count(allele)
+		if(nrow(alleleIndex) < 1){
+			warning("all missing data for locus", i, ". Skipping this locus.")
+			to_remove <- c(to_remove, i)
+			next
+		}
+		alleleIndex <- alleleIndex %>% mutate(prop = n / sum(n), index = 1:length(allele))
+		alleleFreq[[i]] <- alleleIndex
+
+		a1 <- a %>% pull(1)
+		a2 <- a %>% pull(2)
+		a1 <- alleleIndex$index[match(a1, alleleIndex$allele)]
+		a2 <- alleleIndex$index[match(a2, alleleIndex$allele)]
+		a1[is.na(a1)] <- 0
+		a2[is.na(a2)] <- 0
+		gp <- gp %>% tibble::add_column(!!i := a1,
+												  !!paste0(i, ".A2") := a2)
+	}
+	loci <- loci[!loci %in% to_remove]
+
+	textOut <- c( # text vector with each entry a line
+	paste0(projName, " ! Project name"),
+	paste0(colOutFileName, " ! Output file name"),
+	paste0(nrow(gp) - length(candMales) - length(candFemales), " ! Number of offspring in the sample"),
+	paste0((ncol(gp) - 1) / 2, " !  Number of loci"),
+	"7 ! Seed for random number generation",
+	"1 ! 0/1 no/yes update allele frequencies",
+	"2 ! 2/1 dioecious/monoecious",
+	"0 ! 0/1 no/yes inbreeding",
+	"0 ! 0/1 diploid/haplodiploid",
+	"0 0 ! 0/1 polygamous/monogamous males females",
+	"0 ! 0/1 no/yes infer clones",
+	"1 ! 0/1 no/yes scale sibship",
+	"0 ! 0/1/2/3/4 no/weak/medium/strong/calcualteFromNeAndR sibship prior",
+	"1 ! 0/1 unknown/known allele frequencies",
+	paste(sapply(alleleFreq, nrow), collapse = " ") # number of alleles for each locus
+	)
+	# Alleles and frequencies for each locus
+	for(i in loci){
+		textOut <- c(textOut,
+		paste(alleleFreq[[i]]$index, collapse = " "),
+		paste(alleleFreq[[i]]$prop, collapse = " "))
+	}
+	textOut <- c(
+		textOut,
+		"1 ! Number of replicated runs",
+		"1 ! 1/2/3/4 short/medium/long/very long run",
+		"0 ! 0/1 for monitor method",
+		"10000 ! monitor interval",
+		"0 ! 0/1 non-GUI/GUI",
+		"1 ! 0/1/2 PLS/FL/FPLS likelihood calculation",
+		"1 ! 0/1/2/3 Low/Medium/High/Very High precision in calculating the full likelihood",
+		paste(loci, collapse = " "), # marker names
+		paste(rep("0", length(loci)), collapse = " "), # marker co-dominant or dominant
+		paste(rep(alleleDropoutRate, length(loci)), collapse = " "), # allelic dropout rate
+		paste(rep(otherGenotypingErrorRate, length(loci)), collapse = " ") # other genotyping error rate
+	)
+	# split genotypes
+	gp_cm <- gp %>% filter(Ind %in% candMales)
+	gp_cf <- gp %>% filter(Ind %in% candFemales)
+	gp <- gp %>% filter(!Ind %in% c(candMales, candFemales))
+
+	# offspring genotypes
+	for(i in 1:nrow(gp)) textOut <- c(textOut, paste(unlist(gp[i,]), collapse = " "))
+
+	textOut <- c(
+		textOut,
+		paste0(candMaleProb, " ", candFemaleProb, " ! prob sire is in candMale prob dam is in candFemale"),
+		paste0(length(candMales), " ", length(candFemales), " ! number of candMale and candFemale")
+	)
+
+	# candidate male genotypes
+	if(nrow(gp_cm) > 0) for(i in 1:nrow(gp_cm)) textOut <- c(textOut, paste(unlist(gp_cm[i,]), collapse = " "))
+
+	# candidate female genotypes
+	if(nrow(gp_cf) > 0) for(i in 1:nrow(gp_cf)) textOut <- c(textOut, paste(unlist(gp_cf[i,]), collapse = " "))
+
+	textOut <- c(
+		textOut,
+		"0 0 ! number offspring with known sires and mismatches allowed for known sires",
+		# line(s) for known offspring-sire dyads ommited
+		"0 0 ! number offspring with known dams and mismatches allowed for known dams",
+		# line(s) for known offspring-dam dyads ommited
+		"0 ! known paternal sibships",
+		# known paternal sibship lines skipped
+		"0 ! known maternal sibships",
+		# known maternal sibship lines skipped
+		"0 ! offspring with excluded sires",
+		# excluded sires lines skipped
+		"0 ! offspring with excluded dams",
+		# excluded dam lines skipped
+		"0 ! excluded paternal sibships",
+		# excluded paternal sibship lines skipped
+		"0 ! excluded maternal sibships"
+		# excluded maternal sibship lines skipped
+	)
+	if(is.null(filename)){
+		return(textOut)
+	}
+	writeLines(textOut, con = filename)
+}

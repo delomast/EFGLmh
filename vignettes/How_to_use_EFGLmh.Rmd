@@ -330,6 +330,17 @@ Write a Structure file
 exportStructure(all_data, "structureInput.txt")
 ```
 
+Write a Colony file
+```{r, eval=FALSE}
+# to write to file
+exportColony(all_data, filename = "ColonyInput.dat")
+# OR, if you want to modify a setting
+# to return as a character vector (each line an item), modify, and write out
+colonyInput <- exportColony(all_data, filename = NULL)
+colonyInput[1] <- "NewProjectName" # example of modification
+writeLines(colonyInput, "modifiedColonyInput.dat") # write it to a file
+```
+
 Write a "Progeny-export-style" file that can be later loaded back into EFGLmh with `readInData()`. This file will have Pop, Ind, metadata, genotypes (2 column per call).
 ```{r, eval=FALSE}
 exportProgenyStyle(all_data, "progenyStyleFile.txt")
