@@ -312,7 +312,7 @@ ckmr_af <- exportCKMRsimAF(all_data)
 
 A long format tibble of genotypes. Meant for input into CKMRsim. Note that pop information is not included in the export.
 ```{r}
-ckmr_af <- exportCKMRsimLG(all_data, pops = c("OmyOXBO19S"))
+ckmr_lg <- exportCKMRsimLG(all_data, pops = c("OmyOXBO19S"))
 ```
 
 Write a GenePop file
