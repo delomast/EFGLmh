@@ -11,6 +11,6 @@ a tibble
 exampleData
 }
 \description{
-An example input dataset used in the vignette
+Adds a population name column (required by EFGLmh).
 }
 \keyword{datasets}

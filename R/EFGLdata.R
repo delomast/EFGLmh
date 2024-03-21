@@ -148,5 +148,36 @@ print.EFGLdata <- function(x, ...){
 }
 
 #' An example input dataset used in the vignette
+#'
+#' Adds a population name column (required by EFGLmh).
+#'
 #' @format a tibble
 "exampleData"
+
+#' A function for turning the genotype output of mtype2 (microTyper)
+#' into a wide format for input into EFGLmh
+#' @param x the output of mtype2, either a tibble or a path to a file
+#' @param popName The value to give all samples for population name.
+#' @export
+mtype2wide <- function(x, popName = "PopulationName"){
+
+	if(!is.data.frame(x) & is.character(x)) x <- read_tsv(x)
+	# x is a tibble with the mtype2 output
+	return(x %>%
+		# remove extra info
+		select(Indiv, Locus, Allele1, Allele2) %>%
+		pivot_longer(c(Allele1, Allele2)) %>%
+		# change blank genotype fields to NA if not done already
+		mutate(value = na_if(value, "")) %>%
+		# add ".A1" and ".A2" to separate alleles in wide format
+		mutate(name = gsub("llele", "", name),
+				 Locus = paste0(Locus, ".", name)) %>%
+		select(-name) %>%
+		# make wide for EFGLmh
+		pivot_wider(values_from =  value, names_from = Locus) %>%
+		# add population name(s)
+		mutate(Pop = popName) %>%
+		# organize as popName, indName, genotypes
+		select(Pop, Indiv, sort(everything()))
+	)
+}
