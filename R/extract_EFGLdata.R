@@ -135,8 +135,9 @@ calcHet <- function(x){
 }
 
 #' calculate allele frequencies within populations
-#' Loci that are all missing genotypes wihtin a pop will be
-#' (silently) excluded form the output.
+#' Combinations of pop, locus, allele that are not observed are
+#' (silently) excluded from the output. To add these back in, one can
+#' use the `tidyverse` function `complete` with the output of this function.
 #' @param x an EFGLdata object
 #' @return a tibble
 #' @export
@@ -145,7 +146,6 @@ calcAF <- function(x){
 
 	x$genotypes %>% tidyr::gather(locus, allele, 3:ncol(.)) %>%
 		filter(!is.na(allele)) %>%
-		mutate(alleleNum = ifelse(grepl("\\.A1$", locus), "Allele1", "Allele2")) %>%
 		mutate(locus = gsub("\\.A[12]$", "", locus)) %>%
 		group_by(Pop, locus) %>%
 		count(allele) %>% mutate(freq = n / sum(n)) %>%
