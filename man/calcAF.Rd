@@ -3,8 +3,9 @@
 \name{calcAF}
 \alias{calcAF}
 \title{calculate allele frequencies within populations
-Loci that are all missing genotypes wihtin a pop will be
-(silently) excluded form the output.}
+Combinations of pop, locus, allele that are not observed are
+(silently) excluded from the output. To add these back in, one can
+use the `tidyverse` function `complete` with the output of this function.}
 \usage{
 calcAF(x)
 }
@@ -16,6 +17,7 @@ a tibble
 }
 \description{
 calculate allele frequencies within populations
-Loci that are all missing genotypes wihtin a pop will be
-(silently) excluded form the output.
+Combinations of pop, locus, allele that are not observed are
+(silently) excluded from the output. To add these back in, one can
+use the `tidyverse` function `complete` with the output of this function.
 }
